@@ -1,16 +1,18 @@
 #!/bin/bash
 
 from daemon import Daemon
-import sys
+import sys, time
 
 PID_FILE = '/var/run/tpm-daemon.pid'
 LOG_FILE = '/var/log/tpm-daemon.log'
-CWD		 = '/var/cache/tpm/'
+CWD		= '/var/cache/tpm/'
 
 class TPMDaemon(Daemon):
 
 	def run(self):
-			
+		while True:
+			time.sleep(60)
+					
 if __name__ == "__main__":
 	daemon = TPMDaemon(PID_FILE, CWD);
 
@@ -19,8 +21,8 @@ if __name__ == "__main__":
 			print("Starting TPM-Daemon.")
 			try:
 				daemon.start()
-			except:
-				pass
+			except Exception as e:
+				print(e)
 		elif 'stop' == sys.argv[1]:
 			print("Stopping TPM-Daemon.")
 			try:
@@ -30,7 +32,7 @@ if __name__ == "__main__":
 		elif 'restart' == sys.argv[1]:
 			try:
 				print("Stopping TPM-Daemon.");
-				daemon.stop()
+				daemon.stop(True)
 				print("Starting TPM-Daemon.")
 				daemon.start()
 			except:
