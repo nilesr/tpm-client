@@ -5,7 +5,7 @@ class Daemon(object):
 	def __init__(self, pid_file_path, cwd = '/tmp/', stdin = '/dev/null', stdout = '/dev/null', stderr = '/dev/null'):
 		self.pid_file_path = pid_file_path
 		self.cwd = cwd
-    	self.stdin = stdin
+		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr
 	
@@ -31,6 +31,9 @@ class Daemon(object):
 			sys.exit(1)
 		
 		# Move to working directory
+		if not os.path.isdir(cwd):
+			os.rename(cwd, cwd + ".bak")
+		
 		os.chdir(self.cwd)
 		os.umask(0)
 
@@ -54,16 +57,20 @@ class Daemon(object):
 		# Set atexit() to remove_pid_open();
 		atexit.register(self.remove_pid_file);
 
-	def remove_pid_open(self):
-		os.remove(self.pid_file_path);	
-	
-	def stop(self, restaring = False):
+	def get_pid(self):
 		try:
 			pid_file = open(self.pidfile, 'r');
 			pid = int(pid_file.read().strip())
 			pid_file.close()
-		except IOError:
+		except:
 			pid = -1;
+		return pid
+
+	def remove_pid_open(self):
+		os.remove(self.pid_file_path);	
+	
+	def stop(self, restaring = False):
+		pid = self.get_pid();
 
 		if pid == -1:
 			if restarting = False:
@@ -79,14 +86,8 @@ class Daemon(object):
 			
 	def start(self):
 		# Check if PID file already exists
-		try:
-			pid_file = open(self.pid_file_path, 'r')
-			current_pid = int(pid_file.read().strip())
-			pid_file.close();
-		except IOError:
-			current_pid = -1;
-        
-		if current_pid != -1:
+        pid = self.get_pid()
+		if pid != -1:
 			sys.stderr.write("Error: Daemon is currently running, exiting...\n")
 			sys.exit(1)
         elif:
@@ -102,6 +103,6 @@ class Daemon(object):
 		self.run()
 
 	def run():
-		sys.stderr.write("Error: Daemon.run() has not been overridden, exiting...")
+		sys.stderr.write("Error: Daemon.run() has not been overridden, exiting...\n")
 		self.stop()
 		sys.exit(1)
