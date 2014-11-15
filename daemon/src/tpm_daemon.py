@@ -1,20 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env python
 
 from daemon import Daemon
+from tpm_protocol import TPMProtocol
 import sys, os, time
 
 PID_FILE = '/var/run/tpm-daemon.pid'
 LOG_FILE = '/var/log/tpm-daemon.log'
 CWD		= '/var/cache/tpm/'
+UX_SOCK = '/var/run/tpm-socket'
 
 class TPMDaemon(Daemon):
 
 	def run(self):
+		tpm_protocol = TPMProtocol(UX_SOCK)
+		
 		while True:
 			time.sleep(60)
 					
 if __name__ == "__main__":
-	daemon = TPMDaemon(PID_FILE, CWD);
+	daemon = TPMDaemon(PID_FILE, CWD, stdout = LOG_FILE, stderr = LOG_FILE);
 
 	root = os.geteuid() == 0
 

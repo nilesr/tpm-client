@@ -71,7 +71,7 @@ class Daemon(object):
 	def remove_pid_file(self):
 		os.remove(self.pid_file_path);	
 	
-	def stop(self, restaring = False):
+	def stop(self, restarting = False):
 		pid = self.get_pid();
 	
 		if pid == -1:
