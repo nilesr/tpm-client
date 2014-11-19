@@ -1,17 +1,24 @@
 import sys, os, socket, _thread
 
+# Versions
+from protocol_versions.protocol_1_0 import Protocol_1_0
+
+from socket_utils import SocketUtils
+
 #TODO: Convert _thread to threading
 
-class TPMProtocol():
+class TPMProtocol(SocketUtils):
 	
 	def run(self, thread_name, thread_id):
+		
+		self.valid_protocols = {
+			"PROTOCOL 1.0": Protocol_1_0
+		}
+		
 		while True:
 			try:
-				connection, client_address = self.socket.accept()
-				
-				connection.send(b"Hello, World!")
-				
-				connection.close()
+				sock, client = self.socket.accept()
+				self.handler(sock, client)	
 			except Exception as e:
 				sys.stderr.write("%s\n" % e)
 
@@ -36,5 +43,14 @@ class TPMProtocol():
 			# Start listener
 			_thread.start_new_thread(self.run, ("Server", 0))
 		except Exception as e:
-			sys.stderr.write("%s\n" % e)
+			sys.stderr.write("%s\n" % e)	
 
+	def handler(self, sock, client):
+		handshake = self.read_line(sock)
+	
+		if handshake in self.valid_protocols:
+			protocol = self.valid_protocols[handshake](sock, client)
+			protocol.run()
+		else:
+			sock.send(b"ERROR XXX - Invalid Protocol\n")
+			sock.close()
