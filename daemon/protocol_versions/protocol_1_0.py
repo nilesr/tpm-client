@@ -90,5 +90,5 @@ class Protocol_1_0(SocketUtils):
 			package_index = BTEdb.Database("/var/cache/tpm/package-index.json")
 			package_index.master = json.loads(response.read().decode('utf-8'))
 		except Exception as e:
-			sys.stderr.write("Failed to update package index.")
-			sys.exit(1)
+			sys.stderr.write("Failed to update package list: {0}\n".format(e))
+			self.writeln("Error: XXX - Failed to update package list.")

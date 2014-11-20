@@ -59,13 +59,13 @@ if __name__ == "__main__":
 		elif 'status' == sys.argv[1].lower():
 			pid = daemon.get_pid();
 			if pid != -1:
-				print("TPM-Daemon is running %s." % pid)
+				print("TPM-Daemon is running with PID: {0}.".format(pid))
 			else:
 				print("TPM-Daemon is not running")
 		else:
-			print("usage: %s start|stop|restart|status" % sys.argv[0])
+			print("usage: {0} start|stop|restart|status".format(sys.argv[0]))
 			sys.exit(2);
 	else:
-		print("usage: %s start|stop|restart|status" % sys.argv[0])
+		print("usage: {0} start|stop|restart|status".format(sys.argv[0]))
 		sys.exit(2)
 
