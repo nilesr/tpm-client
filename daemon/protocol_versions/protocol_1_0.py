@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -24,17 +24,17 @@ class Protocol_1_0(SocketUtils):
 		try:
 			ses.listen_on(int(config["libtorrent"]["listen_port_lower"]), int(config["libtorrent"]["listen_port_upper"]))
 		except:
-			print("Port is not an int")
 			print(traceback.format_exc())
 			sys.exit(1)
+
+		self.update_list();
+
 		ses.start_dht()
 		ses.start_upnp()
 		master = BTEdb.Database(config["daemon"]["rootdir"] + "/package-index.json")
 
 	def update(self, args):
-		packageindex = BTEdb.Database("/var/cache/tpm/package-index.json")
-		response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
-		packageindex.master = json.loads(response.read().decode('utf-8'))
+		self.update_list();
 		self.writeln("UPDATED")
 
 	def get(self, args):
@@ -50,7 +50,7 @@ class Protocol_1_0(SocketUtils):
 			version = args[2]
 			
 			for i in range(100):
-				self.writeln("STATUS {0} {1} {2}% {3}kb/s {4}kb/s".format(package, version, i,100 , 25, 10))
+				self.writeln("STATUS {0} {1} {2}% {3}kb/s {4}kb/s".format(package, version, i, 100, 25, 10))
 				
 			self.writeln("DONE {0} {1} /var/cache/tpm/packages/{0}-{1}-x86_64.tpkg".format(package, version))
 			
@@ -83,3 +83,12 @@ class Protocol_1_0(SocketUtils):
 
 	def close(self):
 		self.running = False
+
+	def update_list():
+		try:
+			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
+			package_index = BTEdb.Database("/var/cache/tpm/package-index.json")
+			package_index.master = json.loads(response.read().decode('utf-8'))
+		except Exception as e:
+			sys.stderr.write("Failed to update package index.")
+			sys.exit(1)
