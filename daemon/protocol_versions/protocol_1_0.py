@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -34,14 +34,14 @@ class Protocol_1_0(SocketUtils):
 	def update(self, args):
 		packageindex = BTEdb.Database("/var/cache/tpm/package-index.json")
 		response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
-		packageindex.master = json.loads(response.read())
+		packageindex.master = json.loads(response.read().decode('utf-8'))
 		self.writeln("UPDATED")
 
 	def get(self, args):
 		# Todo: Actually get
 		if len(args) >= 2:
 			if args[1] == "list":
-				self.writeln("LIST {0}".format("/var/blah/list/path"))
+				self.writeln("LIST {0} ".format("/var/blah/list/path"))
 
 	def download(self, args):
 		# Todo: Actually download
