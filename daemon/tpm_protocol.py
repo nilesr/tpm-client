@@ -1,4 +1,4 @@
-import sys, os, socket, _thread
+import sys, os, socket, _thread, traceback, configparser
 
 # Versions
 from protocol_versions.protocol_1_0 import Protocol_1_0
@@ -22,15 +22,16 @@ class TPMProtocol(SocketUtils):
 			except Exception as e:
 				sys.stderr.write("%s\n" % e)
 
-	def __init__(self, socket_path, config):
+	def __init__(self, socket_path):
 		self.socket_path = socket_path
 
 		sys.stdout.write("Starting socket at: %s\n" % self.socket_path)
-		config = configparser.ConfigParser()
+		self.config = configparser.ConfigParser()
 		try:
-			config.read("example.conf")
+			self.config.read("/etc/tpm/config.ini")
 		except:
 			print("Error reading config file")
+			print(traceback.format_exc())
 		try:
 			os.unlink(self.socket_path)
 		except Exception as e:
@@ -53,8 +54,8 @@ class TPMProtocol(SocketUtils):
 		handshake = self.read_line(sock)
 	
 		if handshake in self.valid_protocols:
-			protocol = self.valid_protocols[handshake](sock, client, config)
+			protocol = self.valid_protocols[handshake](sock, client, self.config)
 			protocol.run()
 		else:
-			sock.send(b"ERROR XXX - Invalid Protocol\n")
+			self.writeln("ERROR XXX - Invalid Protocol")
 			sock.close()

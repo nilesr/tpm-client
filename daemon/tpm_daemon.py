@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from daemon import Daemon
 from tpm_protocol import TPMProtocol
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 	root = os.geteuid() == 0
 
 	if len(sys.argv) == 2:
-		if 'start' == sys.argv[1].tolower():
+		if 'start' == sys.argv[1].lower():
 			if not root:
 				print("You must be root to start TPM-Daemon.")
 				sys.exit(1)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 			except Exception as e:
 				print(e)
 
-		elif 'stop' == sys.argv[1].tolower():
+		elif 'stop' == sys.argv[1].lower():
 			if not root:
 				print("You must be root to stop TPM-Daemon.")
 				sys.exit(1)
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 			except Exception as e:
 				print(e)
 
-		elif 'restart' == sys.argv[1].tolower():
+		elif 'restart' == sys.argv[1].lower():
 			if not root:
 				print("You must be root to restart TPM-Daemon.")
 				sys.exit(1)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 			except Exception as e:
 				print(e)
 
-		elif 'status' == sys.argv[1].tolower():
+		elif 'status' == sys.argv[1].lower():
 			pid = daemon.get_pid();
 			if pid != -1:
 				print("TPM-Daemon is running %s." % pid)
