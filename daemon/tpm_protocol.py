@@ -22,11 +22,15 @@ class TPMProtocol(SocketUtils):
 			except Exception as e:
 				sys.stderr.write("%s\n" % e)
 
-	def __init__(self, socket_path):
+	def __init__(self, socket_path, config):
 		self.socket_path = socket_path
 
 		sys.stdout.write("Starting socket at: %s\n" % self.socket_path)
-
+		config = configparser.ConfigParser()
+		try:
+			config.read("example.conf")
+		except:
+			print("Error reading config file")
 		try:
 			os.unlink(self.socket_path)
 		except Exception as e:
@@ -49,7 +53,7 @@ class TPMProtocol(SocketUtils):
 		handshake = self.read_line(sock)
 	
 		if handshake in self.valid_protocols:
-			protocol = self.valid_protocols[handshake](sock, client)
+			protocol = self.valid_protocols[handshake](sock, client, config)
 			protocol.run()
 		else:
 			sock.send(b"ERROR XXX - Invalid Protocol\n")

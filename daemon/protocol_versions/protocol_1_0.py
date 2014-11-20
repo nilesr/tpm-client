@@ -1,26 +1,36 @@
 import socket, shlex
 from socket_utils import SocketUtils
+import libtorrent as lt
+import BTEdb
 
 class Protocol_1_0(SocketUtils):
 
 	version = "PROTOCOL 1.0"
 	
-	def __init__(self, sock, client):
+	def __init__(self, sock, client, config):
 		self.sock = sock
 		self.client = client
 		self.running = True
+		self.config = config
 
 		self.methods = {
 			"update": self.update,
 			"get": self.get,
 			"download": self.download,
-			"installed": self.installed,
 			"heartbeat": self.heartbeat,
 			"goodbye": self.goodbye
 		}
+		ses = lt.session()
+		ses.listen_on(config.get("listen_port"))
+		ses.start_dht()
+		ses.start_upnp()
+		master = BTEdb.Database(config["daemon"]["rootdir"]+"/package-index.json")
 
 	def update(self, args):
 		# Todo: actually update
+		packageindex = BTEdb.Database("/var/cache/tpm/package-index.json")
+		response = urllib.request.urlopen(self.config.["repo"]["repo_proto"] + "://" + self.config.["repo"]["repo_addr"] + ":" + self.config.["repo"]["repo_port"] + "/package-index.json")
+		packageindex.master = json.loads(response.read())
 		self.writeln("UPDATED")
 
 	def get(self, args):
@@ -34,16 +44,12 @@ class Protocol_1_0(SocketUtils):
 		if len(args) >= 3:
 			package = args[1]
 			version = args[2]
- 
+			
 			for i in range(100):
 				self.writeln("STATUS {0} {1} {2}% {3}kb/s {4}kb/s".format(package, version, i, 100, 25, 10))
-
+				
 			self.writeln("DONE {0} {1} /var/cache/tpm/packages/{0}-{1}-x86_64.tpkg".format(package, version))
-
-	def installed(self, args):
-		# Todo: Check args, and if installed
-		self.writeln("FALSE")
-
+			
 	def goodbye(self, args):
 		self.writeln("GOODBYE")
 		self.running = False
