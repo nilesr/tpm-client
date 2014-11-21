@@ -20,16 +20,16 @@ class Protocol_1_0(SocketUtils):
 			"goodbye": self.goodbye
 		}
 
-		ses = lt.session()
+		self.ses = lt.session()
 		try:
-			ses.listen_on(int(self.config["libtorrent"]["listen_port_lower"]), int(self.config["libtorrent"]["listen_port_upper"]))
+			self.ses.listen_on(int(self.config["libtorrent"]["listen_port_lower"]), int(self.config["libtorrent"]["listen_port_upper"]))
 		except:
 			print(traceback.format_exc())
 			sys.exit(1)
 
 
-		ses.start_dht()
-		ses.start_upnp()
+		self.ses.start_dht()
+		self.ses.start_upnp()
 		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json")
 		self.update_list()
 		
@@ -86,28 +86,51 @@ class Protocol_1_0(SocketUtils):
 
 	def update_list(self):
 		try:
-			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
-			self.master.master = json.loads(response.read().decode('utf-8'))
-			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/latest.torrent")
-			e = lt.bdecode(response.read().decode("utf-8"))
-			info = lt.torrent_info(e)
-			already_have = {}
+			self.master.master = json.loads(self.fetch_repo_file("/package-index.json"))
+			torrent = lt.bdecode(self.fetch_repo_file("/latest.torrent"))
+
+			torrent_info = lt.torrent_info(torrent)
+			pre_downloaded = {}
+			
 			i = 0
-			for f in info.files():
-				if os.path.exists(self.config["daemon"]["rootdir"] + f.path) and urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/hash/" + f.path).decode("utf-8") == hashlib.sha256(open(self.config["daemon"]["rootdir"] + f.path).read()).hexdigest():
-					# We already have the file and it's hash is correct
-					already_have[i] = f
+			for f in torrent_info.files():
+				if self.valid_tpkg_file(f):
+					pre_downloaded[i] = f
 				i += 1
-			params = { save_path: self.config["daemon"]["rootdir"] + "/packages", ti: info}
-			h = ses.add_torrent(params)
-			for item, itemindex in already_have.items():
-				pr = info.map_file(itemindex,0,item.size)
-				n_pieces = pr.length / info.piece_length() + 1
-				for i in range(info.num_pieces()):
-					if i in range(pr.piece,pr.piece+n_pieces):
-						h.piece_priority(i,7)
+
+
+			params = {
+				"save_path": self.config["daemon"]["rootdir"] + "/packages/",
+				"ti": torrent_info
+			}
+			
+			h = self.ses.add_torrent(params)
+
+			for i in pre_downloaded:
+				pr = torrent_info.map_file(i, 0, pre_downloaded[i])
+				n_pieces = pr.length / torrent_info.piece_length() + 1
+
+				for p in range(torrent_info.num_pieces()):
+					if p in range(pr.piece, pr.piece + n_pieces):
+						h.piece_priority(p, 7)
 					else:
-						h.piece_priority(i,0)
+						h.piece_priority(p, 0)
+
 		except Exception as e:
 			sys.stderr.write("Failed to update package list: {0}\n".format(e))
 			self.writeln("Error: XXX - Failed to update package list.")
+
+	def fetch_remote_hashcode(self, f):
+		return fetch_repo_file("/hash/" + f.path)
+
+	def fetch_local_hashcode(self, f):
+		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + f.path).read()).hexdigest()
+
+	def fetch_repo_file(self, path):
+		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
+		return urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read().decode('utf-8')
+
+	def valid_tpkg_file(self, f):
+		if os.path.exists(self.config["daemon"]["rootdir"] + f.path):
+			return fetch_remote_hashcode(f) == fetch_local_hashcode(f)
+		return False
