@@ -32,7 +32,8 @@ class Protocol_1_0(SocketUtils):
 		ses.start_dht()
 		ses.start_upnp()
 		self.master = BTEdb.Database(config["daemon"]["rootdir"] + "/package-index.json")
-
+		self.update_list()
+		
 	def update(self, args):
 		self.update_list();
 		self.writeln("UPDATED")
@@ -88,6 +89,26 @@ class Protocol_1_0(SocketUtils):
 		try:
 			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
 			self.master.master = json.loads(response.read().decode('utf-8'))
+			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/latest.torrent")
+			e = lt.bdecode(response)
+			info = lt.torrent_info(e)
+			params = { save_path: self.config["damon"]["rootdir"] + "/packages", ti: info}
+			already_have = {}
+			i = 0
+			for f in info.files():
+				if os.path.exists(self.config["daemon"]["rootdir"] + f) and urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/hash/" + f).decode("utf-8") == hashlib.sha256(open(self.config["daemon"]["rootdir"] + f).read()).hexdigest():
+					# We already have the file and it's hash is correct
+					already_have[f] = i
+				i += 1
+			h = ses.add_torrent(params)
+			for item, itemindex in already_have.items():
+				pr = info.map_file(itemindex,0,item.size)
+				n_pieces = pr.length / info.piece_length() + 1
+				for i in range(info.num_pieces()):
+					if i in range(pr.piece,pr.piece+n_pieces):
+						h.piece_priority(i,7)
+					else:
+						h.piece_priority(i,0)
 		except Exception as e:
 			sys.stderr.write("Failed to update package list: {0}\n".format(e))
 			self.writeln("Error: XXX - Failed to update package list.")
