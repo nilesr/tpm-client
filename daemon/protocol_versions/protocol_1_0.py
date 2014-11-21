@@ -31,7 +31,7 @@ class Protocol_1_0(SocketUtils):
 
 		ses.start_dht()
 		ses.start_upnp()
-		master = BTEdb.Database(config["daemon"]["rootdir"] + "/package-index.json")
+		self.master = BTEdb.Database(config["daemon"]["rootdir"] + "/package-index.json")
 
 	def update(self, args):
 		self.update_list();
@@ -87,8 +87,7 @@ class Protocol_1_0(SocketUtils):
 	def update_list():
 		try:
 			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
-			package_index = BTEdb.Database("/var/cache/tpm/package-index.json")
-			package_index.master = json.loads(response.read().decode('utf-8'))
+			self.master.master = json.loads(response.read().decode('utf-8'))
 		except Exception as e:
 			sys.stderr.write("Failed to update package list: {0}\n".format(e))
 			self.writeln("Error: XXX - Failed to update package list.")
