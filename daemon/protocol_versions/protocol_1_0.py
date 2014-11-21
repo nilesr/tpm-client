@@ -19,6 +19,10 @@ class Protocol_1_0(SocketUtils):
 			"heartbeat": self.heartbeat,
 			"goodbye": self.goodbye
 		}
+		if not os.path.isdir(self.config["daemon"]["rootdir"]):
+			os.mkdir(self.config["daemon"]["rootdir"])
+		if not os.path.isdir(self.config["daemon"]["rootdir"] + "/packages"):
+			os.mkdir(self.config["daemon"]["rootdir"] + "/packages")
 
 		self.ses = lt.session()
 		try:
@@ -89,6 +93,7 @@ class Protocol_1_0(SocketUtils):
 	def update_list(self):
 		try:
 			self.master.master = json.loads(self.fetch_repo_file("/package-index.json"))
+			self.master.Vacuum()
 			torrent = lt.bdecode(self.fetch_repo_file("/latest.torrent"))
 
 			torrent_info = lt.torrent_info(torrent)
@@ -131,8 +136,15 @@ class Protocol_1_0(SocketUtils):
 	def fetch_repo_file(self, path, save = False, mode = 'w+'):
 		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
 		
-		return urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read().decode('utf-8')
+		data = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read().decode('utf-8')
 
+		if save != False:
+			f = open(save, mode)
+			f.write(data)
+			f.close()
+
+		return data
+		
 	def valid_tpkg_file(self, f):
 		if os.path.exists(self.config["daemon"]["rootdir"] + f.path):
 			return fetch_remote_hashcode(f) == fetch_local_hashcode(f)
