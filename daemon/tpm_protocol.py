@@ -20,23 +20,22 @@ class TPMProtocol(SocketUtils):
 				sock, client = self.socket.accept()
 				self.handler(sock, client)	
 			except Exception as e:
-				sys.stderr.write("%s\n" % e)
+				sys.stderr.write("{0}\n".format(e))
 
 	def __init__(self, socket_path):
 		self.socket_path = socket_path
 
-		sys.stdout.write("Starting socket at: %s\n" % self.socket_path)
+		sys.stdout.write("Starting socket at: {0}\n".format(self.socket_path))
 		self.config = configparser.ConfigParser()
 		try:
 			self.config.read("/etc/tpm/config.ini")
 		except:
-			print("Error reading config file")
-			print(traceback.format_exc())
+			print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
 		try:
 			os.unlink(self.socket_path)
 		except Exception as e:
 			if os.path.exists(self.socket_path):
-				sys.stderr.write("Socket file at: %s exists, exiting...")
+				sys.stderr.write("Socket file at: {0} exists, exiting...".format(self.socket_path))
 				sys.exit(1)
 
 		try:

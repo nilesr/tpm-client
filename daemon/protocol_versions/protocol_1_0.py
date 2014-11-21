@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os
+import socket, shlex, traceback, BTEdb, sys, urllib, json, os, platform
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -6,7 +6,7 @@ class Protocol_1_0(SocketUtils):
 
 	version = "PROTOCOL 1.0"
 	
-	def __init__(self,sock,client,config):
+	def __init__(self, sock, client, config):
 		self.sock = sock
 		self.client = client
 		self.running = True
@@ -19,10 +19,15 @@ class Protocol_1_0(SocketUtils):
 			"heartbeat": self.heartbeat,
 			"goodbye": self.goodbye
 		}
-		if not os.path.isdir(self.config["daemon"]["rootdir"]):
-			os.mkdir(self.config["daemon"]["rootdir"])
-		if not os.path.isdir(self.config["daemon"]["rootdir"] + "/packages"):
-			os.mkdir(self.config["daemon"]["rootdir"] + "/packages")
+
+		self.required_directories = {
+			self.config["daemon"]["rootdir"] + "/packages"
+		}
+
+		for d in self.required_directories:
+			if not os.path.exists(d):
+				os.makedirs(d)
+
 
 		self.ses = lt.session()
 		try:
@@ -30,7 +35,6 @@ class Protocol_1_0(SocketUtils):
 		except:
 			print(traceback.format_exc())
 			sys.exit(1)
-
 
 		self.ses.start_dht()
 		self.ses.start_upnp()
@@ -51,6 +55,10 @@ class Protocol_1_0(SocketUtils):
 
 	def download(self, args):
 		# Todo: Actually download
+		if len(args) >= 4:
+			arch = args[3]
+		else:
+			arch = platform.processor()
 		if len(args) >= 3:
 			package = args[1]
 			version = args[2]
