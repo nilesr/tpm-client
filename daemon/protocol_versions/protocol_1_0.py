@@ -30,6 +30,8 @@ class Protocol_1_0(SocketUtils):
 
 		self.ses.start_dht()
 		self.ses.start_upnp()
+
+		# NOT LOADING PROPERLY!!!! #
 		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json")
 		self.update_list()
 		
@@ -126,8 +128,9 @@ class Protocol_1_0(SocketUtils):
 	def fetch_local_hashcode(self, f):
 		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + f.path).read()).hexdigest()
 
-	def fetch_repo_file(self, path):
+	def fetch_repo_file(self, path, save = False, mode = 'w+'):
 		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
+		
 		return urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read().decode('utf-8')
 
 	def valid_tpkg_file(self, f):
