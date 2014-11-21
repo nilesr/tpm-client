@@ -22,16 +22,15 @@ class Protocol_1_0(SocketUtils):
 
 		ses = lt.session()
 		try:
-			ses.listen_on(int(config["libtorrent"]["listen_port_lower"]), int(config["libtorrent"]["listen_port_upper"]))
+			ses.listen_on(int(self.config["libtorrent"]["listen_port_lower"]), int(self.config["libtorrent"]["listen_port_upper"]))
 		except:
 			print(traceback.format_exc())
 			sys.exit(1)
 
-		self.update_list();
 
 		ses.start_dht()
 		ses.start_upnp()
-		self.master = BTEdb.Database(config["daemon"]["rootdir"] + "/package-index.json")
+		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json")
 		self.update_list()
 		
 	def update(self, args):
@@ -85,21 +84,21 @@ class Protocol_1_0(SocketUtils):
 	def close(self):
 		self.running = False
 
-	def update_list():
+	def update_list(self):
 		try:
 			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/package-index.json")
 			self.master.master = json.loads(response.read().decode('utf-8'))
 			response = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/latest.torrent")
-			e = lt.bdecode(response)
+			e = lt.bdecode(response.read().decode("utf-8"))
 			info = lt.torrent_info(e)
-			params = { save_path: self.config["damon"]["rootdir"] + "/packages", ti: info}
 			already_have = {}
 			i = 0
 			for f in info.files():
-				if os.path.exists(self.config["daemon"]["rootdir"] + f) and urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/hash/" + f).decode("utf-8") == hashlib.sha256(open(self.config["daemon"]["rootdir"] + f).read()).hexdigest():
+				if os.path.exists(self.config["daemon"]["rootdir"] + f.path) and urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + "/hash/" + f.path).decode("utf-8") == hashlib.sha256(open(self.config["daemon"]["rootdir"] + f.path).read()).hexdigest():
 					# We already have the file and it's hash is correct
-					already_have[f] = i
+					already_have[i] = f
 				i += 1
+			params = { save_path: self.config["daemon"]["rootdir"] + "/packages", ti: info}
 			h = ses.add_torrent(params)
 			for item, itemindex in already_have.items():
 				pr = info.map_file(itemindex,0,item.size)
