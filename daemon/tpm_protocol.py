@@ -10,11 +10,6 @@ from socket_utils import SocketUtils
 class TPMProtocol(SocketUtils):
 	
 	def run(self, thread_name, thread_id):
-		
-		self.valid_protocols = {
-			"PROTOCOL 1.0": Protocol_1_0
-		}
-		
 		while True:
 			try:
 				sock, client = self.socket.accept()
@@ -23,6 +18,10 @@ class TPMProtocol(SocketUtils):
 				sys.stderr.write("{0}\n".format(e))
 
 	def __init__(self, socket_path):
+		self.valid_protocols = {
+			"PROTOCOL 1.0": Protocol_1_0
+		}
+		
 		self.socket_path = socket_path
 
 		sys.stdout.write("Starting socket at: {0}\n".format(self.socket_path))
@@ -31,6 +30,11 @@ class TPMProtocol(SocketUtils):
 			self.config.read("/etc/tpm/config.ini")
 		except:
 			print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
+
+		# Load protocols:
+		for protocol in self.valid_protocols:
+			self.valid_protocols[protocol] = self.valid_protocols[protocol](self.config)
+
 		try:
 			os.unlink(self.socket_path)
 		except Exception as e:
@@ -43,7 +47,7 @@ class TPMProtocol(SocketUtils):
 			self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 			self.socket.bind(self.socket_path)
 			self.socket.listen(1)
-			
+
 			# Start listener
 			_thread.start_new_thread(self.run, ("Server", 0))
 		except Exception as e:
@@ -53,7 +57,7 @@ class TPMProtocol(SocketUtils):
 		handshake = self.read_line(sock)
 	
 		if handshake in self.valid_protocols:
-			protocol = self.valid_protocols[handshake](sock, client, self.config)
+			protocol = self.valid_protocols[handshake].run(sock, client)
 			protocol.run()
 		else:
 			self.writeln("ERROR XXX - Invalid Protocol")

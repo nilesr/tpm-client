@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, json, os, platform
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -6,9 +6,7 @@ class Protocol_1_0(SocketUtils):
 
 	version = "PROTOCOL 1.0"
 	
-	def __init__(self, sock, client, config):
-		self.sock = sock
-		self.client = client
+	def __init__(self, config):
 		self.running = True
 		self.config = config
 
@@ -75,7 +73,9 @@ class Protocol_1_0(SocketUtils):
 	def heartbeat(self, args):
 		self.writeln(self.last_line)
 
-	def run(self):
+	def run(self, sock, client):
+		self.sock = sock
+		self.client = client
 		self.writeln(self.version)
 
 		while self.running == True:
