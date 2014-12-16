@@ -61,11 +61,16 @@ class Protocol_1_0(SocketUtils):
 			package = args[1]
 			version = args[2]
 			
+
+			
+
 			for i in range(100):
 				self.writeln("STATUS {0} {1} {2}% {3}kb/s {4}kb/s".format(package, version, i, 100, 25, 10))
 				
 			self.writeln("DONE {0} {1} /var/cache/tpm/packages/{0}-{1}-x86_64.tpkg".format(package, version))
-			
+		else:
+			self.writeln("INVALID ARGUMENTS");	
+
 	def goodbye(self, args):
 		self.writeln("GOODBYE")
 		self.running = False
@@ -100,11 +105,11 @@ class Protocol_1_0(SocketUtils):
 
 	def update_list(self):
 		try:
-			self.master.master = json.loads(self.fetch_repo_file("/package-index.json"))
+			self.master.master = json.loads(self.fetch_repo_file("/package-index.json").decode('utf-8'))
 			self.master.Vacuum()
-			torrent = lt.bdecode(self.fetch_repo_file("/latest.torrent"))
 
-			torrent_info = lt.torrent_info(torrent)
+			self.fetch_repo_file("/latest.torrent", self.config["daemon"]["rootdir"] + "/latest.torrent", "wb")
+			torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/latest.torrent")
 			pre_downloaded = {}
 			
 			i = 0
@@ -115,7 +120,7 @@ class Protocol_1_0(SocketUtils):
 
 
 			params = {
-				"save_path": self.config["daemon"]["rootdir"] + "/packages/",
+				"save_path": self.config["daemon"]["rootdir"],
 				"ti": torrent_info
 			}
 			
@@ -133,6 +138,7 @@ class Protocol_1_0(SocketUtils):
 
 		except Exception as e:
 			sys.stderr.write("Failed to update package list: {0}\n".format(e))
+			traceback.print_exc()
 			self.writeln("Error: XXX - Failed to update package list.")
 
 	def fetch_remote_hashcode(self, f):
@@ -141,10 +147,10 @@ class Protocol_1_0(SocketUtils):
 	def fetch_local_hashcode(self, f):
 		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + f.path).read()).hexdigest()
 
-	def fetch_repo_file(self, path, save = False, mode = 'w+'):
+	def fetch_repo_file(self, path, save = False, mode = 'w'):
 		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
 		
-		data = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read().decode('utf-8')
+		data = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read()
 
 		if save != False:
 			f = open(save, mode)
