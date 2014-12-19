@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform, math
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -61,8 +61,23 @@ class Protocol_1_0(SocketUtils):
 			package = args[1]
 			version = args[2]
 			
+			path = package + "-" + version + "-" + arch + ".tpkg";
+			print(path)
 
+			i = 0
+			for f in self.torrent_info.files():
+				if f.path.replace("packages/", "") == path:
+					to_download = f
+					break;
+				i += 1
 			
+			pr = self.torrent_info.map_file(i, 0, to_download.size);
+			n_pieces = math.ceil(pr.length / self.torrent_info.piece_length() + 1);
+
+			for i in range(self.torrent_info.num_pieces()):
+				if i in range(pr.piece, pr.piece + n_pieces):
+					print(i)
+					self.handler.piece_priority(i, 7)
 
 			for i in range(100):
 				self.writeln("STATUS {0} {1} {2}% {3}kb/s {4}kb/s".format(package, version, i, 100, 25, 10))
@@ -98,7 +113,7 @@ class Protocol_1_0(SocketUtils):
 
 	def no_such_method(self):
 		self.writeln("Error: XXX - No such method")
-		self.close()
+		#self.close()
 
 	def close(self):
 		self.running = False
@@ -109,43 +124,47 @@ class Protocol_1_0(SocketUtils):
 			self.master.Vacuum()
 
 			self.fetch_repo_file("/latest.torrent", self.config["daemon"]["rootdir"] + "/latest.torrent", "wb")
-			torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/latest.torrent")
+			self.torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/latest.torrent")
 			pre_downloaded = {}
 			
 			i = 0
-			for f in torrent_info.files():
-				if self.valid_tpkg_file(f):
+			for f in self.torrent_info.files():
+				if self.valid_tpkg_file(f.path):
 					pre_downloaded[i] = f
 				i += 1
 
 
 			params = {
 				"save_path": self.config["daemon"]["rootdir"],
-				"ti": torrent_info
+				"ti": self.torrent_info
 			}
 			
-			h = self.ses.add_torrent(params)
+			self.handler = self.ses.add_torrent(params)
 
-			for i in pre_downloaded:
-				pr = torrent_info.map_file(i, 0, pre_downloaded[i])
-				n_pieces = pr.length / torrent_info.piece_length() + 1
 
-				for p in range(torrent_info.num_pieces()):
-					if p in range(pr.piece, pr.piece + n_pieces):
-						h.piece_priority(p, 7)
-					else:
-						h.piece_priority(p, 0)
+			# FIX #
+			for p in range(self.torrent_info.num_pieces()):
+				self.handler.piece_priority(p, 0)
+
+			for i in self.torrent_info.files():
+				if i in pre_downloaded:
+					pr = self.torrent_info.map_file(i, 0, pre_downloaded[i].size)
+					n_pieces = pr.length / self.torrent_info.piece_length() + 1
+
+					for p in range(self.torrent_info.num_pieces()):
+						if p in range(pr.piece, pr.piece + n_pieces):
+							self.handler.piece_priority(p, 7)
 
 		except Exception as e:
 			sys.stderr.write("Failed to update package list: {0}\n".format(e))
 			traceback.print_exc()
 			self.writeln("Error: XXX - Failed to update package list.")
 
-	def fetch_remote_hashcode(self, f):
-		return fetch_repo_file("/hash/" + f.path)
+	def fetch_remote_hashcode(self, path):
+		return fetch_repo_file("/hash/" + path.replace("packages/", ""))
 
-	def fetch_local_hashcode(self, f):
-		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + f.path).read()).hexdigest()
+	def fetch_local_hashcode(self, path):
+		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + path).read()).hexdigest()
 
 	def fetch_repo_file(self, path, save = False, mode = 'w'):
 		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
@@ -159,7 +178,10 @@ class Protocol_1_0(SocketUtils):
 
 		return data
 		
-	def valid_tpkg_file(self, f):
-		if os.path.exists(self.config["daemon"]["rootdir"] + f.path):
-			return fetch_remote_hashcode(f) == fetch_local_hashcode(f)
+	def valid_tpkg_file(self, path):
+		if os.path.exists(self.config["daemon"]["rootdir"] + path):
+			print(self.fetch_remote_hashcode(path) + " === " + self.fetch_local_hashcode(path))
+			return self.fetch_remote_hashcode(path) == self.fetch_local_hashcode(path)
+		else:
+			print("Package: " + path.replace("packages/", "") + " has not been downloaded.");
 		return False
