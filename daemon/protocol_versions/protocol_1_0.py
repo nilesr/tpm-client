@@ -58,10 +58,26 @@ class Protocol_1_0(SocketUtils):
 		else:
 			arch = platform.processor()
 		if len(args) >= 3:
-			package = args[1]
 			version = args[2]
-			
-			path = package + "-" + version + "-" + arch + ".tpkg";
+		else:
+			version = "Latest"
+		if len(args) >= 2:
+			package = args[1]
+			filename = False
+			#path = package + "-" + version + "-" + arch + ".tpkg";
+			try:
+				versions = self.master.Dump(package)
+				for d in versions:
+					if d["Architecture"] == arch and d["Version"] == version:
+						if d["Version"] == "Latest":
+							filename = d["Filename"]
+						else:
+							for e in versions:
+								if e["Version"] == d["LatestVersion"] and e["Architecture"] == arch:
+									filename = e["Filename"]
+			if not filename:
+				self.writeln("ERROR XXX: Package not found")
+				return
 			print(path)
 
 			i = 0
@@ -121,6 +137,7 @@ class Protocol_1_0(SocketUtils):
 	def update_list(self):
 		try:
 			self.master.master = json.loads(self.fetch_repo_file("/package-index.json").decode('utf-8'))
+			assert(not self.master.TransactionInProgress)
 			self.master.Vacuum()
 
 			self.fetch_repo_file("/latest.torrent", self.config["daemon"]["rootdir"] + "/latest.torrent", "wb")
