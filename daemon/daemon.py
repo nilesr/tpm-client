@@ -88,6 +88,7 @@ class Daemon(object):
 		except OSError as e:
 			#TODO: Make a more advance handler
 			sys.exit(1)
+			print(e)
 			
 	def start(self):
 		# Check if PID file already exists

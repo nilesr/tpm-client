@@ -62,7 +62,7 @@ class Protocol_1_0(SocketUtils):
 			version = args[2]
 		else:
 			version = "Latest"
-			
+
 		if len(args) >= 2:
 			package = args[1]
 			filename = False
@@ -91,12 +91,12 @@ class Protocol_1_0(SocketUtils):
 			if not to_download:
 				print("ERROR XXX: dunno")
 				return
+
 			pr = self.torrent_info.map_file(i, 0, to_download.size);
 			n_pieces = math.ceil(pr.length / self.torrent_info.piece_length() + 1);
 
 			for i in range(self.torrent_info.num_pieces()):
 				if i in range(pr.piece, pr.piece + n_pieces):
-					print(i)
 					self.handler.piece_priority(i, 7)
 
 			for i in range(100):
