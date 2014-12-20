@@ -65,16 +65,15 @@ class Protocol_1_0(SocketUtils):
 			package = args[1]
 			filename = False
 			#path = package + "-" + version + "-" + arch + ".tpkg";
-			try:
-				versions = self.master.Dump(package)
-				for d in versions:
-					if d["Architecture"] == arch and d["Version"] == version:
-						if d["Version"] == "Latest":
-							filename = d["Filename"]
-						else:
-							for e in versions:
-								if e["Version"] == d["LatestVersion"] and e["Architecture"] == arch:
-									filename = e["Filename"]
+			versions = self.master.Dump(package)
+			for d in versions:
+				if d["Architecture"] == arch and d["Version"] == version:
+					if d["Version"] == "Latest":
+						filename = d["Filename"]
+					else:
+						for e in versions:
+							if e["Version"] == d["LatestVersion"] and e["Architecture"] == arch:
+								filename = e["Filename"]
 			if not filename:
 				self.writeln("ERROR XXX: Package not found")
 				return
