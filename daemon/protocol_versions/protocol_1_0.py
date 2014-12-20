@@ -68,7 +68,7 @@ class Protocol_1_0(SocketUtils):
 			versions = self.master.Dump(package)
 			for d in versions:
 				if d["Architecture"] == arch and d["Version"] == version:
-					if d["Version"] == "Latest":
+					if d["Version"] != "Latest":
 						filename = d["Filename"]
 					else:
 						for e in versions:
@@ -77,7 +77,6 @@ class Protocol_1_0(SocketUtils):
 			if not filename:
 				self.writeln("ERROR XXX: Package not found")
 				return
-			print(path)
 
 			i = 0
 			for f in self.torrent_info.files():
