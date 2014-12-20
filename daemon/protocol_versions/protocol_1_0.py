@@ -67,8 +67,8 @@ class Protocol_1_0(SocketUtils):
 			#path = package + "-" + version + "-" + arch + ".tpkg";
 			versions = self.master.Dump(package)
 			for d in versions:
-				if d["Architecture"] == arch and d["Version"] == version:
-					if d["Version"] != "Latest":
+				if d["Architecture"] == arch:
+					if d["Version"] != "Latest" and d["Version"] == version:
 						filename = d["Filename"]
 					else:
 						for e in versions:
