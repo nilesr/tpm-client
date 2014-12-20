@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform, math
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform, math, time
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -99,12 +99,14 @@ class Protocol_1_0(SocketUtils):
 				if i in range(pr.piece, pr.piece + n_pieces):
 					self.handler.piece_priority(i, 7)
 
-			for i in range(100):
-				self.writeln("STATUS {0} {1} {2}% {3}kb/s {4}kb/s".format(package, version, i, 100, 25, 10))
+			self.print_status(self.handler.status())
 				
 			self.writeln("DONE {0} {1} /var/cache/tpm/packages/{0}-{1}-x86_64.tpkg".format(package, version))
 		else:
 			self.writeln("INVALID ARGUMENTS");	
+
+	def print_status(self, s):
+		self.writeln("STATUS Somewhere between 0 and 100")
 
 	def goodbye(self, args):
 		self.writeln("GOODBYE")
