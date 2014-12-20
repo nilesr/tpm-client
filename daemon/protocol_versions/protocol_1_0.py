@@ -57,10 +57,12 @@ class Protocol_1_0(SocketUtils):
 			arch = args[3]
 		else:
 			arch = platform.processor()
+
 		if len(args) >= 3:
 			version = args[2]
 		else:
 			version = "Latest"
+			
 		if len(args) >= 2:
 			package = args[1]
 			filename = False
@@ -81,7 +83,8 @@ class Protocol_1_0(SocketUtils):
 			i = 0
 			to_download = False
 			for f in self.torrent_info.files():
-				if f.path.replace("packages/", "") == path:
+				print(f.path.replace("packages/", "") + " = " + filename);
+				if f.path.replace("packages/", "") == filename:
 					to_download = f
 					break;
 				i += 1
