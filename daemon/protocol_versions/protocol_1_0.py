@@ -79,12 +79,15 @@ class Protocol_1_0(SocketUtils):
 				return
 
 			i = 0
+			to_download = False
 			for f in self.torrent_info.files():
 				if f.path.replace("packages/", "") == path:
 					to_download = f
 					break;
 				i += 1
-			
+			if not to_download:
+				print("ERROR XXX: dunno")
+				return
 			pr = self.torrent_info.map_file(i, 0, to_download.size);
 			n_pieces = math.ceil(pr.length / self.torrent_info.piece_length() + 1);
 
