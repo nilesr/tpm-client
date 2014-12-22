@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform, math, time, threading
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, hashlib, os, platform, math, time, threading
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -77,7 +77,7 @@ class Protocol_1_0(SocketUtils):
 								filename = e["Filename"]
 								version = d["LatestVersion"];
 			if not filename:
-				self.writeln("ERROR XXX: Package not found")
+				self.writeln("ERROR XXX: Package not found.")
 				return
 
 			id = 0
@@ -101,7 +101,10 @@ class Protocol_1_0(SocketUtils):
 
 			self.print_status(id, pr, package, version, filename)
 				
-			self.writeln("DONE {0} {1} {0}".format(package, version, arch, self.config["daemon"]["rootdir"] + filename))
+			if self.valid_tpkg_file(to_download.path):
+				self.writeln("DONE {0} {1} {2} {3}".format(package, version, arch, self.config["daemon"]["rootdir"] + "/" + to_download.path))
+			else:
+				self.writeln("ERROR XXX: Hash verification failed.")
 		else:
 			self.writeln("INVALID ARGUMENTS");	
 
@@ -134,12 +137,13 @@ class Protocol_1_0(SocketUtils):
 		while self.running == True:
 			try:
 				self.last_line = self.read_line();
-				action = shlex.split(self.last_line.lower())
 
-				thread = threading.Thread(target = self.call_method, args = [action])
-				thread.start()
+				if self.last_line.length != 0:
+					action = shlex.split(self.last_line.lower())
+					thread = threading.Thread(target = self.call_method, args = [action])
+					thread.start()
 			except Exception as e:
-				self.running = False
+				return
 		self.close();
 
 	def call_method(self, action):
@@ -184,7 +188,6 @@ class Protocol_1_0(SocketUtils):
 			
 			self.handler = self.ses.add_torrent(params)
 
-
 			# FIX #
 			for p in range(self.torrent_info.num_pieces()):
 				self.handler.piece_priority(p, 0)
@@ -204,10 +207,10 @@ class Protocol_1_0(SocketUtils):
 			self.writeln("Error: XXX - Failed to update package list.")
 
 	def fetch_remote_hashcode(self, path):
-		return fetch_repo_file("/hash/" + path.replace("packages/", ""))
+		return self.fetch_repo_file("/hash/" + path.replace("packages/", "")).decode('utf-8').strip()
 
 	def fetch_local_hashcode(self, path):
-		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + path).read()).hexdigest()
+		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + path, "rb").read()).hexdigest()
 
 	def fetch_repo_file(self, path, save = False, mode = 'w'):
 		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
@@ -222,9 +225,9 @@ class Protocol_1_0(SocketUtils):
 		return data
 		
 	def valid_tpkg_file(self, path):
-		if os.path.exists(self.config["daemon"]["rootdir"] + path):
-			print(self.fetch_remote_hashcode(path) + " === " + self.fetch_local_hashcode(path))
+		print(self.config["daemon"]["rootdir"] + path)
+		if os.path.exists(self.config["daemon"]["rootdir"] + "/" + path):
 			return self.fetch_remote_hashcode(path) == self.fetch_local_hashcode(path)
 		else:
-			print("Package: " + path.replace("packages/", "") + " has not been downloaded.");
+			print("Package: " + path + " has not been downloaded.");
 		return False
