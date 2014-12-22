@@ -36,7 +36,6 @@ class Protocol_1_0(SocketUtils):
 		self.ses.start_dht()
 		self.ses.start_upnp()
 
-		# NOT LOADING PROPERLY!!!! #
 		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json")
 		self.update_list()
 		
@@ -137,12 +136,12 @@ class Protocol_1_0(SocketUtils):
 		while self.running == True:
 			try:
 				self.last_line = self.read_line();
-
-				if self.last_line.length != 0:
+				if len(self.last_line) != 0:
 					action = shlex.split(self.last_line.lower())
 					thread = threading.Thread(target = self.call_method, args = [action])
 					thread.start()
 			except Exception as e:
+				print(e)
 				return
 		self.close();
 
