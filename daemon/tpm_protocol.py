@@ -55,10 +55,10 @@ class TPMProtocol(SocketUtils):
 
 	def handler(self, sock, client):
 		handshake = self.read_line(sock)
-	
+		
 		if handshake in self.valid_protocols:
 			protocol = self.valid_protocols[handshake];
 			protocol.run(sock, client)
 		else:
-			self.writeln("ERROR XXX - Invalid Protocol")
+			sock.send(b"ERROR XXX - Invalid Protocol\n");
 			sock.close()

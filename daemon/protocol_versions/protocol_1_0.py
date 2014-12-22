@@ -1,4 +1,4 @@
-import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform, math, time
+import socket, shlex, traceback, BTEdb, sys, urllib, urllib.request, json, os, platform, math, time, threading
 from socket_utils import SocketUtils
 import libtorrent as lt
 
@@ -7,7 +7,6 @@ class Protocol_1_0(SocketUtils):
 	version = "PROTOCOL 1.0"
 	
 	def __init__(self, config):
-		self.running = True
 		self.config = config
 
 		self.methods = {
@@ -76,41 +75,52 @@ class Protocol_1_0(SocketUtils):
 						for e in versions:
 							if e["Version"] == d["LatestVersion"] and e["Architecture"] == arch:
 								filename = e["Filename"]
+								version = d["LatestVersion"];
 			if not filename:
 				self.writeln("ERROR XXX: Package not found")
 				return
 
-			i = 0
+			id = 0
 			to_download = False
 			for f in self.torrent_info.files():
 				print(f.path.replace("packages/", "") + " = " + filename);
 				if f.path.replace("packages/", "") == filename:
 					to_download = f
 					break;
-				i += 1
+				id += 1
 			if not to_download:
 				print("ERROR XXX: dunno")
 				return
 
-			pr = self.torrent_info.map_file(i, 0, to_download.size);
+			pr = self.torrent_info.map_file(id, 0, to_download.size);
 			n_pieces = math.ceil(pr.length / self.torrent_info.piece_length() + 1);
 
 			for i in range(self.torrent_info.num_pieces()):
 				if i in range(pr.piece, pr.piece + n_pieces):
 					self.handler.piece_priority(i, 7)
 
-			self.print_status(self.handler.status())
+			self.print_status(id, pr, package, version, filename)
 				
-			self.writeln("DONE {0} {1} /var/cache/tpm/packages/{0}-{1}-x86_64.tpkg".format(package, version))
+			self.writeln("DONE {0} {1} {0}".format(package, version, arch, self.config["daemon"]["rootdir"] + filename))
 		else:
 			self.writeln("INVALID ARGUMENTS");	
 
-	def print_status(self, s):
-		self.writeln("STATUS Somewhere between 0 and 100")
+	def print_status(self, id, pr, package, version, filename):
+		progress = self.get_progress(pr, id);
+		
+		while progress != 100:
+			self.writeln("STATUS {0} {1}%".format(package, progress))
+			time.sleep(1)
+			progress = self.get_progress(pr, id);
+
+		self.writeln("STATUS {0} {1}%".format(package, progress))
+
+	def get_progress(self, pr, id):
+		return round((self.handler.file_progress()[id] / pr.length) * 100, )
 
 	def goodbye(self, args):
 		self.writeln("GOODBYE")
-		self.running = False
+		self.close();
 
 	def heartbeat(self, args):
 		self.writeln(self.last_line)
@@ -119,13 +129,18 @@ class Protocol_1_0(SocketUtils):
 		self.sock = sock
 		self.client = client
 		self.writeln(self.version)
+		self.running = True;
 
 		while self.running == True:
-			self.last_line = self.read_line();
-			action = shlex.split(self.last_line.lower())
-			self.call_method(action)
+			try:
+				self.last_line = self.read_line();
+				action = shlex.split(self.last_line.lower())
 
-		self.sock.close();
+				thread = threading.Thread(target = self.call_method, args = [action])
+				thread.start()
+			except Exception as e:
+				self.running = False
+		self.close();
 
 	def call_method(self, action):
 		if action[0] in self.methods:
@@ -138,7 +153,12 @@ class Protocol_1_0(SocketUtils):
 		#self.close()
 
 	def close(self):
+		print(self.running)
 		self.running = False
+
+		print(self.running)
+		self.sock.shutdown(socket.SHUT_RDWR)
+		self.sock.close()
 
 	def update_list(self):
 		try:

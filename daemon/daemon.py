@@ -79,7 +79,8 @@ class Daemon(object):
 				sys.stderr.write("Daemon is not running, exiting...\n")
 				sys.exit(1)
 			else:
-				sys.stderr.write("Daemon is not running\n")
+				sys.stderr.write("Daemon is not running.\n")
+				return
 
 		# Kill PID
 		try:
