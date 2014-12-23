@@ -15,6 +15,15 @@ try:
 except:
 		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
 		sys.exit(1)
+sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+# Connect the socket to the port where the server is listening
+server_address = 
+print >>sys.stderr, 'connecting to %s' % server_address
+try:
+    sock.connect(server_address)
+except socket.error, msg:
+    print >>sys.stderr, msg
+    sys.exit(1)
 
 
 

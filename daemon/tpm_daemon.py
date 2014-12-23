@@ -5,19 +5,24 @@ from tpm_protocol import TPMProtocol
 import sys, os, time
 import configparser
 
-PID_FILE = '/var/run/tpm-daemon.pid'
-LOG_FILE = '/var/log/tpm-daemon.log'
-CWD		= '/var/cache/tpm/'
-UX_SOCK = '/var/run/tpm-socket'
+try:
+		config = configparser.ConfigParser()
+		config.read("/etc/tpm/config.ini")
+		pidfile = config["daemon"]["pidfile"]
+		logfile = config["daemon"]["logfile"]
+		socket_path = config["daemon"]["socket"]
+except:
+		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
+		sys.exit(1)
 
 class TPMDaemon(Daemon):
 	def run(self):
-		tpm_protocol = TPMProtocol(UX_SOCK)
+		tpm_protocol = TPMProtocol(socket_path)
 		while True:
 			time.sleep(60)
 					
 if __name__ == "__main__":
-	daemon = TPMDaemon(PID_FILE, CWD, stdout = LOG_FILE, stderr = LOG_FILE);
+	daemon = TPMDaemon(pidfile, "/tmp/", stdout = logfile, stderr = logfile);
 	root = os.geteuid() == 0
 
 	if len(sys.argv) == 2:
