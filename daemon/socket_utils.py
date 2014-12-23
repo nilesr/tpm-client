@@ -26,3 +26,11 @@ class SocketUtils():
 		buffer = bytes(string + delim, encoding = "utf-8")
 
 		self.sock.send(buffer)
+
+def sock_write(sock, string):
+	buffer = bytes(string, encoding = "utf-8")
+	sock.send(buffer)
+
+def sock_writeln(sock, string, delim = '\n'):
+	buffer = bytes(string + delim, encoding = "utf-8")
+	sock.send(buffer)
