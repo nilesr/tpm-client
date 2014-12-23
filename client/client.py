@@ -17,8 +17,8 @@ def write_line(string):
 
 def overwrite_line(string):
 	stdscr.addstr(str(curses.getsyx()))
-	stdscr.move(curses.getsyx()[0], 0);
-	stdscr.clrtoeol();
+	stdscr.move(curses.getsyx()[0], 0)
+	stdscr.clrtoeol()
 	stdscr.addstr(string)
 	stdscr.refresh()
 	sys.stdout.flush()
@@ -32,6 +32,13 @@ def download():
 def install():
 	for package in args.packages:
 		overwrite_line("Determining dependencies for packages: '" + package + "'.")
+		parameters = package.split(":")
+		packagename = parameters[0]
+		if len(parameters) < 3:
+			packagearch = "Default"
+			if len(parameters) < 2:
+				packageversion = "Latest"
+		print(packagename, packageversion, packagearch)
 	write_line("\n")
 	
 def remove():
@@ -49,7 +56,7 @@ actions = {
 	"remove": remove,
 	"purge": purge,
 	"search": search
-};
+}
 
 if __name__ == '__main__':
 	actions.get(args.action,command_not_found)()
