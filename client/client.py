@@ -33,6 +33,7 @@ def install():
 	for package in args.packages:
 		overwrite_line("Determining dependencies for packages: '" + package + "'.")
 	write_line("\n")
+	
 def remove():
 	pass
 
