@@ -34,9 +34,9 @@ def download():
 
 def install():
 	for package in args.packages:
-		overwrite_line("Determining dependencies for packages: '" + package + "'.")
 		parameters = package.split(":")
 		packagename = parameters[0]
+		overwrite_line("Determining dependencies for packages: '" + packagename + "'.")
 		if len(parameters) < 3:
 			packagearch = "Default"
 			if len(parameters) < 2:
