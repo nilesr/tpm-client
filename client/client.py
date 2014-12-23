@@ -8,17 +8,27 @@ parser.add_argument("action", help = "Action to perform.")
 parser.add_argument("packages", help = "Packages to install.", nargs = '*', type = str)
 args = parser.parse_args()
 
+# BTEdb
+config = configparser.ConfigParser()
+try:
+		self.config.read("/etc/tpm/config.ini")
+except:
+		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
+		sys.exit(1)
+
+
+
 # Curses
 stdscr = curses.initscr()
 
 def write_line(*args):
-	string = args.join(" ")
+	string = " ".join(args)
 	stdscr.addstr(string)
 	stdscr.refresh()
 	sys.stdout.flush()
 
 def overwrite_line(*args):
-	string = args.join(" ")
+	string = " ".join(args)
 	stdscr.addstr(str(curses.getsyx()))
 	stdscr.move(curses.getsyx()[0], 0)
 	stdscr.clrtoeol()
@@ -36,14 +46,18 @@ def install():
 	for package in args.packages:
 		parameters = package.split(":")
 		packagename = parameters[0]
-		overwrite_line("Determining dependencies for packages: '" + packagename + "'.")
+		#overwrite_line("Determining dependencies for packages: '" + packagename + "'.")
 		if len(parameters) < 3:
 			packagearch = "Default"
 			if len(parameters) < 2:
 				packageversion = "Latest"
-		print(packagename, packageversion, packagearch)
-	write_line("\n")
-	
+			else:
+				packageversion = parameters[1]
+		else:
+			packagearch = parameters[2]
+			packageversion = parameters[1]
+		write_line(packagename, packageversion, packagearch, "\n")
+		
 def remove():
 	pass
 
