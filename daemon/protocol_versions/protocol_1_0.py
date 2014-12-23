@@ -172,8 +172,8 @@ class Protocol_1_0(SocketUtils):
 			assert(not self.master.TransactionInProgress)
 			self.master.Vacuum()
 
-			self.fetch_repo_file("/latest.torrent", self.config["daemon"]["rootdir"] + "/latest.torrent", "wb")
-			self.torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/latest.torrent")
+			self.fetch_repo_file("/torrent", self.config["daemon"]["rootdir"] + "/torrent", "wb")
+			self.torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/torrent")
 			pre_downloaded = {}
 			
 			i = 0

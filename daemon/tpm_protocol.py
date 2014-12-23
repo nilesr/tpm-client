@@ -51,7 +51,7 @@ class TPMProtocol(SocketUtils):
 			# Start listener
 			_thread.start_new_thread(self.run, ("Server", 0))
 		except Exception as e:
-			sys.stderr.write("%s\n" % e)	
+			sys.stderr.write(e + "\n")
 
 	def handler(self, sock, client):
 		handshake = self.read_line(sock)
