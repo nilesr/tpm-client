@@ -10,12 +10,14 @@ args = parser.parse_args()
 # Curses
 stdscr = curses.initscr()
 
-def write_line(string):
+def write_line(*args):
+	string = args.join(" ")
 	stdscr.addstr(string)
 	stdscr.refresh()
 	sys.stdout.flush()
 
-def overwrite_line(string):
+def overwrite_line(*args):
+	string = args.join(" ")
 	stdscr.addstr(str(curses.getsyx()))
 	stdscr.move(curses.getsyx()[0], 0)
 	stdscr.clrtoeol()
@@ -38,7 +40,7 @@ def install():
 			packagearch = "Default"
 			if len(parameters) < 2:
 				packageversion = "Latest"
-		print(packagename, packageversion, packagearch)
+		write_line(packagename, packageversion, packagearch)
 	write_line("\n")
 	
 def remove():
