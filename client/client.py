@@ -41,7 +41,7 @@ def install():
 			packagearch = "Default"
 			if len(parameters) < 2:
 				packageversion = "Latest"
-		write_line(packagename, packageversion, packagearch)
+		print(packagename, packageversion, packagearch)
 	write_line("\n")
 	
 def remove():
@@ -63,7 +63,7 @@ actions = {
 
 if __name__ == '__main__':
 	actions.get(args.action,command_not_found)()
-	print(args)
+	#print(args)
 else:
 	print("Do not execute indirectly. Prepare to die")
 	sys.exit(1)
