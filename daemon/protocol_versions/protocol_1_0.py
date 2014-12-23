@@ -47,7 +47,7 @@ class Protocol_1_0(SocketUtils):
 		# Todo: Actually get
 		if len(args) >= 2:
 			if args[1] == "list":
-				self.writeln("LIST {0} ".format("/var/blah/list/path"))
+				self.writeln("LIST {0} ".format(self.config["daemon"]["rootdir"] + "/package-index.json"))
 
 	def download(self, args):
 		# Todo: Actually download
@@ -57,14 +57,17 @@ class Protocol_1_0(SocketUtils):
 			arch = platform.processor()
 
 		if len(args) >= 3:
-			version = args[2]
+			if args[2] == "latest":
+				version = "Latest"
+			else:
+				version = args[2]
 		else:
 			version = "Latest"
 
 		if len(args) >= 2:
 			package = args[1]
 			filename = False
-			#path = package + "-" + version + "-" + arch + ".tpkg";
+			
 			versions = self.master.Dump(package)
 			for d in versions:
 				if d["Version"] == version:
@@ -101,7 +104,7 @@ class Protocol_1_0(SocketUtils):
 			self.print_status(id, pr, package, version, filename)
 				
 			if self.valid_tpkg_file(to_download.path):
-				self.writeln("DONE {0} {1} {2} {3}".format(package, version, arch, self.config["daemon"]["rootdir"] + "/" + to_download.path))
+				self.writeln("DONE {0} {1} {2} {3}".format(package, version, arch, self.config["daemon"]["rootdir"] + "/" + to_download.path).replace('//', '/'))
 			else:
 				self.writeln("ERROR XXX: Hash verification failed.")
 		else:
