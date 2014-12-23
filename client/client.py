@@ -1,28 +1,20 @@
 #!/usr/bin/env python3
-import argparse, sys, time
-import curses, traceback
+
+import sys
+
+sys.path.append("../daemon/")
+
+import argparse, time, configparser, curses, traceback, socket, socket_utils
+
+# Vars
+sock = False
+
 # Parser 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("action", help = "Action to perform.")
 parser.add_argument("packages", help = "Packages to install.", nargs = '*', type = str)
 args = parser.parse_args()
-
-# BTEdb
-config = configparser.ConfigParser()
-try:
-		config.read("/etc/tpm/config.ini")
-except:
-		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
-		sys.exit(1)
-sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-server_address = config["daemon"]["socket"]
-try:
-    sock.connect(server_address)
-except:
-    print(traceback.format_exc())
-    sys.exit(1)
-sock.writeln
 
 # Curses
 stdscr = curses.initscr()
@@ -44,6 +36,8 @@ def overwrite_line(*args):
 
 def command_not_found():
 	write_line("Action '" + args.action + "' not found.")
+
+# Actions #
 
 def download():
 	pass
@@ -81,7 +75,42 @@ actions = {
 	"search": search
 }
 
+
+def daemon_handshake(protocol_version):
+	socket_utils.writeln(sock, protocol_version)
+
+	if socket_utils.read_line(sock) != protocol_version:
+		print("Daemon Handshake Failed.");
+		sys.exit(1)
+
+def daemon_get_list_location():
+	socket_utils.writeln(sock, "GET LIST")
+	return socket_utils.read_line(sock)
+
 if __name__ == '__main__':
+
+	config = configparser.ConfigParser()
+	try:
+		config.read("/etc/tpm/config.ini")
+	except:
+		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
+		sys.exit(1)
+	
+	sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	server_address = config["daemon"]["socket"]
+	
+	try:
+		sock.connect(server_address)
+	except:
+		print(traceback.format_exc())
+		sys.exit(1)
+
+	daemon_handshake("PROTOCOL 1.0");
+
+	database_location = daemon_get_list_location();
+
+	print(database_location)
+
 	actions.get(args.action,command_not_found)()
 	#print(args)
 else:
