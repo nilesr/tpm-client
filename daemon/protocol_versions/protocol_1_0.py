@@ -215,17 +215,19 @@ class Protocol_1_0(SocketUtils):
 		return hashlib.sha256(open(self.config["daemon"]["rootdir"] + path, "rb").read()).hexdigest()
 
 	def fetch_repo_file(self, path, save = False, mode = 'w'):
-		print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
+		try:
+			print("Fetching repo file: {0}".format(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path))
 		
-		data = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read()
+			data = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read()
 
-		if save != False:
-			f = open(save, mode)
-			f.write(data)
-			f.close()
-
-		return data
-		
+			if save != False:
+				f = open(save, mode)
+				f.write(data)
+				f.close()
+			return data
+		except Exception as e:
+			print("Failed to connect to server, exiting...");
+			sys.exit(1)
 	def valid_tpkg_file(self, path):
 		print(self.config["daemon"]["rootdir"] + path)
 		if os.path.exists(self.config["daemon"]["rootdir"] + "/" + path):
