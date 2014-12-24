@@ -27,10 +27,22 @@ class SocketUtils():
 
 		self.sock.send(buffer)
 
-def sock_write(sock, string):
+def read_line(sock, delim = '\n', buffer_size = 4096):
+	buffer = ''
+	
+	while True:
+		data = sock.recv(buffer_size)
+		buffer += bytes.decode(data)
+	
+		if buffer.endswith(delim):
+			break
+
+	return buffer.rstrip(delim)
+
+def write(sock, string):
 	buffer = bytes(string, encoding = "utf-8")
 	sock.send(buffer)
 
-def sock_writeln(sock, string, delim = '\n'):
+def writeln(sock, string, delim = '\n'):
 	buffer = bytes(string + delim, encoding = "utf-8")
 	sock.send(buffer)
