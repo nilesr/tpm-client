@@ -56,8 +56,15 @@ def install():
 		else:
 			packagearch = parameters[2]
 			packageversion = parameters[1]
+		for version in db.Dump(packagename):
+			if version["Version"] == packageversion:
+				if version["Version"] != "Latest":
+					write_line(version["Dependencies"] + "\n")
+				else:
+					for version_ in db.Dump(packagename):
+						if verison_["Version"] == version["LatestVersion"]:
+							write_line(version["Dependencies"] + "\n")
 		write_line(packagename, packageversion, packagearch, "\n")
-		
 def remove():
 	pass
 
@@ -92,6 +99,7 @@ def daemon_get_list():
 		return db
 	else:
 		print("Error reading list. " + location)
+		sys.exit(1)
 if __name__ == '__main__':
 
 	config = configparser.ConfigParser()
