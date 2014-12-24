@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, BTEdb
 
 sys.path.append("../daemon/")
 
@@ -83,10 +83,15 @@ def daemon_handshake(protocol_version):
 		print("Daemon Handshake Failed.");
 		sys.exit(1)
 
-def daemon_get_list_location():
+def daemon_get_list():
 	socket_utils.writeln(sock, "GET LIST")
-	return socket_utils.read_line(sock)
-
+	location = socket_utils.read_line(sock)
+	if location[:5] == "LIST ":
+		location = location[5:]
+		db = BTEdb.Database(location)
+		return db
+	else:
+		print("Error reading list. " + location)
 if __name__ == '__main__':
 
 	config = configparser.ConfigParser()
@@ -107,9 +112,7 @@ if __name__ == '__main__':
 
 	daemon_handshake("PROTOCOL 1.0");
 
-	database_location = daemon_get_list_location();
-
-	print(database_location)
+	db = daemon_get_list();
 
 	actions.get(args.action,command_not_found)()
 	#print(args)
