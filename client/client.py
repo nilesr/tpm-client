@@ -4,7 +4,20 @@ import sys, BTEdb
 
 sys.path.append("../daemon/")
 
-import argparse, time, configparser, curses, traceback, socket, socket_utils
+import argparse, time, configparser, curses, traceback, socket, socket_utils, atexit
+
+# Atexit
+@atexit.register
+def clean_up():
+	if sock != False:
+		try:
+			sock_utils.writeln(sock, "GOODBYE")
+			sock.shutdown(socket.SHUT_RDWR)
+			sock.close()
+		except:
+			pass;
+	curses.endwin()
+
 
 # Vars
 sock = False
@@ -113,9 +126,9 @@ if __name__ == '__main__':
 	server_address = config["daemon"]["socket"]
 	
 	try:
-		sock.connect(server_address)
+		sock.connect(server_address, 5)
 	except:
-		print(traceback.format_exc())
+		print("Failed to connect to dameon, it is either in use, or off.")
 		sys.exit(1)
 
 	daemon_handshake("PROTOCOL 1.0");
