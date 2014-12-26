@@ -123,10 +123,11 @@ if __name__ == '__main__':
 		sys.exit(1)
 	
 	sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	sock.settimeout(10)
 	server_address = config["daemon"]["socket"]
 	
 	try:
-		sock.connect(server_address, 5)
+		sock.connect(server_address)
 	except:
 		print("Failed to connect to dameon, it is either in use, or off.")
 		sys.exit(1)
