@@ -28,21 +28,30 @@ class SocketUtils():
 		self.sock.send(buffer)
 
 def read_line(sock, delim = '\n', buffer_size = 4096):
-	buffer = ''
+	try:
+		buffer = ''
 	
-	while True:
-		data = sock.recv(buffer_size)
-		buffer += bytes.decode(data)
+		while True:
+			data = sock.recv(buffer_size)
+			buffer += bytes.decode(data)
 	
-		if buffer.endswith(delim):
-			break
-
-	return buffer.rstrip(delim)
+			if buffer.endswith(delim):
+				break
+		return buffer.rstrip(delim)
+	except:
+		sys.exit(1)
+		return False
 
 def write(sock, string):
-	buffer = bytes(string, encoding = "utf-8")
-	sock.send(buffer)
+	try:
+		buffer = bytes(string, encoding = "utf-8")
+		sock.send(buffer)
+	except:
+		return False
 
 def writeln(sock, string, delim = '\n'):
-	buffer = bytes(string + delim, encoding = "utf-8")
-	sock.send(buffer)
+	try:
+		buffer = bytes(string + delim, encoding = "utf-8")
+		sock.send(buffer)
+	except:
+		return False
