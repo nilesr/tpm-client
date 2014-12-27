@@ -1,10 +1,13 @@
 import socket, sys, traceback
 
 class SocketUtils():
-	
-	def read_line(self, sock = None, delim = '\n', buffer_size = 4096):
+	""" Class of basic socket utils for convenience, turn into library at some point """
+
+	def read_line(self, sock = None, delim = '\r\n', buffer_size = 4096):
+		""" Read until delim. from socket """
+
 		try:
-			if sock == None and type(self.sock) != socket:
+			if sock == None:
 				sock = self.sock
 
 			buffer = ''
@@ -21,17 +24,21 @@ class SocketUtils():
 			return False;
 
 	def write(self, string):
+		""" Write string to socket """
+
 		buffer = bytes(string, encoding = "utf-8")
-
 		return self.sock.send(buffer)
 
-	def writeln(self, string, delim = '\n'):
+	def write_line(self, string, delim = '\r\n'):
+		""" Write string to socket, followed by delim characters """
+
 		buffer = bytes(string + delim, encoding = "utf-8")
-
 		return self.sock.send(buffer)
 
-def read_line(sock, delim = '\n', buffer_size = 4096):
-	
+
+""" Function versions of SocketUtils class methods: """
+
+def read_line(sock, delim = '\r\n', buffer_size = 4096):
 	try:
 		buffer = ''
 	
@@ -53,7 +60,7 @@ def write(sock, string):
 	except:
 		return False
 
-def writeln(sock, string, delim = '\n'):
+def write_line(sock, string, delim = '\r\n'):
 	try:
 		buffer = bytes(string + delim, encoding = "utf-8")
 		return sock.send(buffer)

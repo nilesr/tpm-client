@@ -2,18 +2,7 @@
 
 from daemon import Daemon
 from tpm_protocol import TPMProtocol
-import sys, os, time
-import configparser
-
-try:
-		config = configparser.ConfigParser()
-		config.read("/etc/tpm/config.ini")
-		pidfile = config["daemon"]["pidfile"]
-		logfile = config["daemon"]["logfile"]
-		socket_path = config["daemon"]["socket"]
-except:
-		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
-		sys.exit(1)
+import sys, os, time, configparser
 
 class TPMDaemon(Daemon):
 	def run(self):
@@ -22,9 +11,23 @@ class TPMDaemon(Daemon):
 			time.sleep(60)
 					
 if __name__ == "__main__":
+
+	""" Load variables from configuration file """
+	try:
+		config = configparser.ConfigParser()
+		config.read("/etc/tpm/config.ini")
+		pidfile = config["daemon"]["pidfile"]
+		logfile = config["daemon"]["logfile"]
+		socket_path = config["daemon"]["socket"]
+	except:
+		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
+		sys.exit(1)
+
 	daemon = TPMDaemon(pidfile, "/tmp/", stdout = logfile, stderr = logfile);
+
 	root = os.geteuid() == 0
 
+	""" Daemon methods, convert to dict. and methods """
 	if len(sys.argv) == 2:
 		if 'start' == sys.argv[1].lower():
 			if not root:

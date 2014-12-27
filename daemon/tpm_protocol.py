@@ -10,6 +10,8 @@ from socket_utils import SocketUtils
 class TPMProtocol(SocketUtils):
 	
 	def run(self, thread_name, thread_id):
+		""" Route incomming connection to handler """
+
 		while True:
 			try:
 				sock, client = self.socket.accept()
@@ -19,6 +21,8 @@ class TPMProtocol(SocketUtils):
 				sys.stderr.write("err: {0}\n".format(e))
 
 	def __init__(self, socket_path):
+
+		""" Dict. of valid protocols and their handler classes """
 		self.valid_protocols = {
 			"PROTOCOL 1.0": Protocol_1_0
 		}
@@ -26,16 +30,20 @@ class TPMProtocol(SocketUtils):
 		self.socket_path = socket_path
 
 		sys.stdout.write("Starting socket at: {0}\n".format(self.socket_path))
+
+		""" Load configuration files """
 		self.config = configparser.ConfigParser()
 		try:
 			self.config.read("/etc/tpm/config.ini")
 		except:
 			print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
 
-		# Load protocols:
+		""" Construct objects of all valid protocols """
 		for protocol in self.valid_protocols:
 			self.valid_protocols[protocol] = self.valid_protocols[protocol](self.config)
 
+
+		""" Ensure that domain socket is not running, and file doesn't exist """
 		try:
 			os.unlink(self.socket_path)
 		except Exception as e:
@@ -43,8 +51,8 @@ class TPMProtocol(SocketUtils):
 				sys.stderr.write("Socket file at: {0} exists, exiting...".format(self.socket_path))
 				sys.exit(1)
 
+		""" Create and bind unix domain socket for the daemon """
 		try:
-			# Create and bind() UNIX Socket
 			self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 			self.socket.bind(self.socket_path)
 			self.socket.listen(0)
@@ -54,11 +62,10 @@ class TPMProtocol(SocketUtils):
 		except Exception as e:
 			sys.stderr.write(e + "\n")
 
+
+	""" Route incomming connection to protocol """
 	def handler(self, sock, client):
 		handshake = self.read_line(sock)
-
-		if handshake == False:
-			print("sads")
 
 		if handshake in self.valid_protocols:
 			protocol = self.valid_protocols[handshake];

@@ -1,40 +1,19 @@
 #!/usr/bin/env python3
 
-import sys, BTEdb
+import sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit
+from daemon_communication import DaemonCommunication
 
-sys.path.append("../daemon/")
-
-import argparse, time, configparser, curses, traceback, socket, socket_utils, atexit
-
-
-# Curses
+""" Curses vars """
 stdscr = curses.initscr()
 
-# Atexit
-@atexit.register
-def clean_up():
-	curses.endwin()
-	if sock != False and connected == True:
-		try:
-			socket_utils.writeln(sock, "GOODBYE")
-			print(socket_utils.read_line(sock))
-			sock.shutdown(socket.SHUT_RDWR)
-			sock.close()
-		except:
-			pass;
-	
 
-
-# Vars
-connected = False;
-sock = False
-
-# Parser 
+""" Arg. parser """
 parser = argparse.ArgumentParser()
 
+""" Arg. parser actions """
 parser.add_argument("action", help = "Action to perform.")
 parser.add_argument("packages", help = "Packages to install.", nargs = '*', type = str)
-args = parser.parse_args()
+
 
 def write_line(*args):
 	string = " ".join(args)
@@ -54,7 +33,7 @@ def overwrite_line(*args):
 def command_not_found():
 	write_line("Action '" + args.action + "' not found.")
 
-# Actions #
+""" Actions """
 
 def download():
 	pass
@@ -82,6 +61,7 @@ def install():
 						if verison_["Version"] == version["LatestVersion"]:
 							write_line(version["Dependencies"] + "\n")
 		write_line(packagename, packageversion, packagearch, "\n")
+
 def remove():
 	pass
 
@@ -91,6 +71,7 @@ def purge():
 def search():
 	pass
 
+""" Actions->function() table """
 actions = {
 	"install": install,
 	"download": download,
@@ -99,30 +80,8 @@ actions = {
 	"search": search
 }
 
-
-def daemon_handshake(protocol_version):
-	socket_utils.writeln(sock, protocol_version)
-
-	if socket_utils.read_line(sock) != protocol_version:
-		print("Daemon Handshake Failed.");
-		sys.exit(1)
-
-def daemon_get_list():
-	socket_utils.writeln(sock, "GET LIST")
-	location = socket_utils.read_line(sock)
-
-	try:
-		if location[:5] == "LIST ":
-			location = location[5:]
-			db = BTEdb.Database(location)
-			return db
-		else:
-			raise Exception("Error")
-	except:
-		print("Error reading list. " + location)
-		sys.exit(1)
-
 if __name__ == '__main__':
+	args = parser.parse_args()
 
 	config = configparser.ConfigParser()
 	try:
@@ -131,23 +90,27 @@ if __name__ == '__main__':
 		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
 		sys.exit(1)
 	
-	sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	sock.settimeout(10)
-	server_address = config["daemon"]["socket"]
-	
-	try:
-		sock.connect(server_address)
-		connected = True;
-	except:
-		print("Failed to connect to dameon, it is either in use, or off.")
-		sys.exit(1)
+	""" DaemonCommunication """
+	daemon = DaemonCommunication(config["daemon"]["socket"], "PROTOCOL 1.0")
 
-	daemon_handshake("PROTOCOL 1.0");
+	daemon.handshake();
 
-	db = daemon_get_list();
+	db = daemon.get_list();
 
 	actions.get(args.action,command_not_found)()
-	#print(args)
 else:
 	print("Do not execute indirectly. Prepare to die")
 	sys.exit(1)
+
+
+""" Clean up method """
+@atexit.register
+def clean_up():
+	curses.endwin()
+	if daemon.connected == True:
+		try:
+			daemon.write_line("GOODBYE")
+			print(daemon.read_line())
+			daemon.close()
+		except:
+			pass;
