@@ -15,7 +15,7 @@ class TPMProtocol(SocketUtils):
 				sock, client = self.socket.accept()
 				self.handler(sock, client)	
 			except Exception as e:
-				sys.stderr.write("{0}\n".format(e))
+				sys.stderr.write("err: {0}\n".format(e))
 
 	def __init__(self, socket_path):
 		self.valid_protocols = {
@@ -46,7 +46,7 @@ class TPMProtocol(SocketUtils):
 			# Create and bind() UNIX Socket
 			self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 			self.socket.bind(self.socket_path)
-			self.socket.listen(1)
+			self.socket.listen(0)
 
 			# Start listener
 			_thread.start_new_thread(self.run, ("Server", 0))
@@ -55,7 +55,10 @@ class TPMProtocol(SocketUtils):
 
 	def handler(self, sock, client):
 		handshake = self.read_line(sock)
-		
+
+		if handshake == False:
+			print("sads")
+
 		if handshake in self.valid_protocols:
 			protocol = self.valid_protocols[handshake];
 			protocol.run(sock, client)

@@ -145,7 +145,7 @@ class Protocol_1_0(SocketUtils):
 					thread.start()
 			except Exception as e:
 				print(e)
-				return
+				break;
 		self.close();
 
 	def call_method(self, action):
@@ -159,10 +159,7 @@ class Protocol_1_0(SocketUtils):
 		#self.close()
 
 	def close(self):
-		print(self.running)
 		self.running = False
-
-		print(self.running)
 		self.sock.shutdown(socket.SHUT_RDWR)
 		self.sock.close()
 

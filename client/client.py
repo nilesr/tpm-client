@@ -6,20 +6,27 @@ sys.path.append("../daemon/")
 
 import argparse, time, configparser, curses, traceback, socket, socket_utils, atexit
 
+
+# Curses
+stdscr = curses.initscr()
+
 # Atexit
 @atexit.register
 def clean_up():
-	if sock != False:
+	curses.endwin()
+	if sock != False and connected == True:
 		try:
-			sock_utils.writeln(sock, "GOODBYE")
+			socket_utils.writeln(sock, "GOODBYE")
+			print(socket_utils.read_line(sock))
 			sock.shutdown(socket.SHUT_RDWR)
 			sock.close()
 		except:
 			pass;
-	curses.endwin()
+	
 
 
 # Vars
+connected = False;
 sock = False
 
 # Parser 
@@ -28,9 +35,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("action", help = "Action to perform.")
 parser.add_argument("packages", help = "Packages to install.", nargs = '*', type = str)
 args = parser.parse_args()
-
-# Curses
-stdscr = curses.initscr()
 
 def write_line(*args):
 	string = " ".join(args)
@@ -106,13 +110,18 @@ def daemon_handshake(protocol_version):
 def daemon_get_list():
 	socket_utils.writeln(sock, "GET LIST")
 	location = socket_utils.read_line(sock)
-	if location[:5] == "LIST ":
-		location = location[5:]
-		db = BTEdb.Database(location)
-		return db
-	else:
+
+	try:
+		if location[:5] == "LIST ":
+			location = location[5:]
+			db = BTEdb.Database(location)
+			return db
+		else:
+			raise Exception("Error")
+	except:
 		print("Error reading list. " + location)
 		sys.exit(1)
+
 if __name__ == '__main__':
 
 	config = configparser.ConfigParser()
@@ -128,6 +137,7 @@ if __name__ == '__main__':
 	
 	try:
 		sock.connect(server_address)
+		connected = True;
 	except:
 		print("Failed to connect to dameon, it is either in use, or off.")
 		sys.exit(1)
