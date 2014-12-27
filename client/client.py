@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit
+import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit, platform
 from daemon_communication import DaemonCommunication
 from screen_shim import ScreenShim
 
@@ -41,18 +41,19 @@ def download():
 def install():
 	for package in args.arguments:
 		try:
-			parameters = package.split(":")
-			packagename = parameters[0]
+			tmp = tuple(package.split(":"))
+			parameters =  tmp + (None,)* (3 - len(tmp))
+
+			package = {
+				"name": parameters[0],
+				"version": parameters[1] if parameters[1] != None else "Latest",
+				"arch": parameters[2] if parameters[2] != None else platform.processor()
+			}
 			
-			if len(parameters) < 3:
-				packagearch = "Default"
-				if len(parameters) < 2:
-					packageversion = "Latest"
-				else:
-					packageversion = parameters[1]
-			else:
-				packagearch = parameters[2]
-				packageversion = parameters[1]
+			print(database.Dump())			
+
+
+			"""
 			for version in database.Dump(packagename):
 				if version["Version"] == packageversion:
 					if version["Version"] != "Latest":
@@ -61,9 +62,10 @@ def install():
 						for version_ in database.Dump(packagename):
 							if verison_["Version"] == version["LatestVersion"]:
 								write_line(version["Dependencies"] + "\n")
-			screen.write_line(packagename, packageversion, packagearch, "\n")
+			print(packagename, packageversion, packagearch, "\n")
+			"""
 		except Exception as e:
-			screen.write_line("Failed to locate package: {0}".format(":".join(parameters)))
+			print("Failed to locate package: {0}".format(":".join(package.values())))
 
 def remove():
 	pass
@@ -112,8 +114,6 @@ if __name__ == '__main__':
 	except:
 		print("Error reading package list " + location)
 		sys.exit(1)
-
-	database = BTEdb.Database(daemon.get_list());
 
 	actions.get(args.action, command_not_found)()
 else:
