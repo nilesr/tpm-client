@@ -43,7 +43,6 @@ def read_line(sock, delim = '\n', buffer_size = 4096):
 				break
 		return buffer.rstrip(delim)
 	except:
-		traceback.print_exception(*sys.exc_info())
 		sys.exit(1)
 		return False
 

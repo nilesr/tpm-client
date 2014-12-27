@@ -139,12 +139,15 @@ class Protocol_1_0(SocketUtils):
 		while self.running == True:
 			try:
 				self.last_line = self.read_line();
+
+				if self.last_line == False:
+					raise Exception("Error")
+
 				if len(self.last_line) != 0:
 					action = shlex.split(self.last_line.lower())
 					thread = threading.Thread(target = self.call_method, args = [action])
 					thread.start()
 			except Exception as e:
-				print(e)
 				break;
 		self.close();
 
@@ -159,9 +162,12 @@ class Protocol_1_0(SocketUtils):
 		#self.close()
 
 	def close(self):
-		self.running = False
-		self.sock.shutdown(socket.SHUT_RDWR)
-		self.sock.close()
+		try:
+			self.running = False
+			self.sock.shutdown(socket.SHUT_RDWR)
+			self.sock.close()
+		except:
+			pass
 
 	def update_list(self):
 		try:

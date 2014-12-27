@@ -15,6 +15,7 @@ class TPMProtocol(SocketUtils):
 				sock, client = self.socket.accept()
 				self.handler(sock, client)	
 			except Exception as e:
+				traceback.print_exception(*sys.exc_info())
 				sys.stderr.write("err: {0}\n".format(e))
 
 	def __init__(self, socket_path):
