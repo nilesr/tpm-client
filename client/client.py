@@ -2,22 +2,19 @@
 
 import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit
 from daemon_communication import DaemonCommunication
-from curses_shim import CursesShim
+from screen_shim import ScreenShim
 
-""" Defines """
+""" Global Defines """
 daemon = False
-curses = False
 config = False
+screen = False
 database = False
 
 """ Clean up method """
 @atexit.register
 def clean_up():
-	if curses != False:
-		curses.endwin()
-		curses.nocbreak()
-		stdscr.keypad(False)
-		curses.echo()
+	if screen != False:
+		screen.end()
 
 	if daemon != False:
 		if daemon.connected == True:
@@ -43,27 +40,30 @@ def download():
 
 def install():
 	for package in args.arguments:
-		parameters = package.split(":")
-		packagename = parameters[0]
-		#overwrite_line("Determining dependencies for packages: '" + packagename + "'.")
-		if len(parameters) < 3:
-			packagearch = "Default"
-			if len(parameters) < 2:
-				packageversion = "Latest"
-			else:
-				packageversion = parameters[1]
-		else:
-			packagearch = parameters[2]
-			packageversion = parameters[1]
-		for version in database.Dump(packagename):
-			if version["Version"] == packageversion:
-				if version["Version"] != "Latest":
-					screen.write_line(version["Dependencies"] + "\n")
+		try:
+			parameters = package.split(":")
+			packagename = parameters[0]
+			
+			if len(parameters) < 3:
+				packagearch = "Default"
+				if len(parameters) < 2:
+					packageversion = "Latest"
 				else:
-					for version_ in database.Dump(packagename):
-						if verison_["Version"] == version["LatestVersion"]:
-							write_line(version["Dependencies"] + "\n")
-		screen.write_line(packagename, packageversion, packagearch, "\n")
+					packageversion = parameters[1]
+			else:
+				packagearch = parameters[2]
+				packageversion = parameters[1]
+			for version in database.Dump(packagename):
+				if version["Version"] == packageversion:
+					if version["Version"] != "Latest":
+						screen.write_line(version["Dependencies"] + "\n")
+					else:
+						for version_ in database.Dump(packagename):
+							if verison_["Version"] == version["LatestVersion"]:
+								write_line(version["Dependencies"] + "\n")
+			screen.write_line(packagename, packageversion, packagearch, "\n")
+		except Exception as e:
+			screen.write_line("Failed to locate package: {0}".format(":".join(parameters)))
 
 def remove():
 	pass
@@ -92,6 +92,8 @@ if __name__ == '__main__':
 		print("Please run tpm-client as root.")
 		sys.exit(1)
 
+	screen = ScreenShim()
+
 	config = configparser.ConfigParser()
 	try:
 		config.read("/etc/tpm/config.ini")
@@ -103,7 +105,6 @@ if __name__ == '__main__':
 	daemon = DaemonCommunication(config["daemon"]["socket"], "PROTOCOL 1.0")
 
 	daemon.handshake();
-
 
 	try:
 		location = daemon.get_list()
