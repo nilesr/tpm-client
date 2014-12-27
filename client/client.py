@@ -1,45 +1,48 @@
 #!/usr/bin/env python3
 
-import sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit
+import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit
 from daemon_communication import DaemonCommunication
+from curses_shim import CursesShim
 
-""" Curses vars """
-stdscr = curses.initscr()
+""" Defines """
+daemon = False
+curses = False
+config = False
+database = False
 
+""" Clean up method """
+@atexit.register
+def clean_up():
+	if curses != False:
+		curses.endwin()
+		curses.nocbreak()
+		stdscr.keypad(False)
+		curses.echo()
+
+	if daemon != False:
+		if daemon.connected == True:
+			try:
+				daemon.close()
+			except:
+				pass;
 
 """ Arg. parser """
 parser = argparse.ArgumentParser()
 
 """ Arg. parser actions """
 parser.add_argument("action", help = "Action to perform.")
-parser.add_argument("packages", help = "Packages to install.", nargs = '*', type = str)
-
-
-def write_line(*args):
-	string = " ".join(args)
-	stdscr.addstr(string)
-	stdscr.refresh()
-	sys.stdout.flush()
-
-def overwrite_line(*args):
-	string = " ".join(args)
-	stdscr.addstr(str(curses.getsyx()))
-	stdscr.move(curses.getsyx()[0], 0)
-	stdscr.clrtoeol()
-	stdscr.addstr(string)
-	stdscr.refresh()
-	sys.stdout.flush()
-
-def command_not_found():
-	write_line("Action '" + args.action + "' not found.")
+parser.add_argument("arguments", help = "Action arguments.", nargs = '*', type = str)
 
 """ Actions """
+
+def command_not_found():
+	screen.write_line("Action '" + args.action + "' not found.")
 
 def download():
 	pass
 
 def install():
-	for package in args.packages:
+	for package in args.arguments:
 		parameters = package.split(":")
 		packagename = parameters[0]
 		#overwrite_line("Determining dependencies for packages: '" + packagename + "'.")
@@ -52,15 +55,15 @@ def install():
 		else:
 			packagearch = parameters[2]
 			packageversion = parameters[1]
-		for version in db.Dump(packagename):
+		for version in database.Dump(packagename):
 			if version["Version"] == packageversion:
 				if version["Version"] != "Latest":
-					write_line(version["Dependencies"] + "\n")
+					screen.write_line(version["Dependencies"] + "\n")
 				else:
-					for version_ in db.Dump(packagename):
+					for version_ in database.Dump(packagename):
 						if verison_["Version"] == version["LatestVersion"]:
 							write_line(version["Dependencies"] + "\n")
-		write_line(packagename, packageversion, packagearch, "\n")
+		screen.write_line(packagename, packageversion, packagearch, "\n")
 
 def remove():
 	pass
@@ -81,7 +84,13 @@ actions = {
 }
 
 if __name__ == '__main__':
+
+	""" Run args parser """
 	args = parser.parse_args()
+
+	if not os.geteuid() == 0:
+		print("Please run tpm-client as root.")
+		sys.exit(1)
 
 	config = configparser.ConfigParser()
 	try:
@@ -90,27 +99,22 @@ if __name__ == '__main__':
 		print("Error reading config file at: {0}, exiting...".format("/etc/tpm/config.ini"))
 		sys.exit(1)
 	
-	""" DaemonCommunication """
+	""" DaemonCommunication Object """
 	daemon = DaemonCommunication(config["daemon"]["socket"], "PROTOCOL 1.0")
 
 	daemon.handshake();
 
-	db = daemon.get_list();
 
-	actions.get(args.action,command_not_found)()
+	try:
+		location = daemon.get_list()
+		database = BTEdb.Database(location)
+	except:
+		print("Error reading package list " + location)
+		sys.exit(1)
+
+	database = BTEdb.Database(daemon.get_list());
+
+	actions.get(args.action, command_not_found)()
 else:
 	print("Do not execute indirectly. Prepare to die")
 	sys.exit(1)
-
-
-""" Clean up method """
-@atexit.register
-def clean_up():
-	curses.endwin()
-	if daemon.connected == True:
-		try:
-			daemon.write_line("GOODBYE")
-			print(daemon.read_line())
-			daemon.close()
-		except:
-			pass;

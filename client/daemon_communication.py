@@ -41,16 +41,10 @@ class DaemonCommunication(SocketUtils):
 		self.write_line("GET LIST")
 		location = self.read_line()
 
-		try:
-			if location[:5] == "LIST ":
-				location = location[5:]
-				db = BTEdb.Database(location)
-				return db
-			else:
-				raise Exception("Error")
-		except:
-			print("Error reading list. " + location)
-			sys.exit(1)
+		if location[:5] == "LIST ":
+			return location[5:]
+		else:
+			raise Exception("Error")
 
 
 	""" Connected property """
