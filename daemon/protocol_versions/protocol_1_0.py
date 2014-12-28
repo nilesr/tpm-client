@@ -47,7 +47,7 @@ class Protocol_1_0(SocketUtils):
 		Download and update package list
 		TODO: Check to ensure this logic is correct
 		"""
-		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json")
+		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json", os.O_NONBLOCK)
 		self.update_list()
 		
 	def update(self, args):

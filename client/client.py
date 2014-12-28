@@ -120,9 +120,10 @@ if __name__ == '__main__':
 	daemon.handshake();
 
 	try:
-		location = "/home/ethan/Projects/tpm-client/client/package-index.json" #daemon.get_list()
+		location = daemon.get_list()
 		database = BTEdb.Database()
 		database.OpenDatabase(location)
+		print(database.Dump())
 	except Exception as e:
 		print("Error reading package list " + location + str(e))
 		sys.exit(1)
