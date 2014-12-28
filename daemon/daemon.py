@@ -101,7 +101,7 @@ class Daemon(object):
 			
 	def start(self):
 		""" Start daemon """
-
+		
 		""" Check if PID file already exists """
 		pid = self.get_pid()
 		
