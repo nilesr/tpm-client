@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit, platform
+import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit, platform, json
 from daemon_communication import DaemonCommunication
 from screen_shim import ScreenShim
 
@@ -42,7 +42,7 @@ def install():
 	for package in args.arguments:
 		try:
 			tmp = tuple(package.split(":"))
-			parameters =  tmp + (None,)* (3 - len(tmp))
+			parameters =  tmp + (None,) * (3 - len(tmp))
 
 			package = {
 				"name": parameters[0],
@@ -50,8 +50,11 @@ def install():
 				"arch": parameters[2] if parameters[2] != None else platform.processor()
 			}
 			
-			print(database.Dump())			
-
+			if TableExists(package["name"]):
+				for version in database.Dump(package["name"]):
+					print(version)
+			else:
+				raise Exception("Package doesn't exist in database.")	
 
 			"""
 			for version in database.Dump(packagename):
@@ -65,7 +68,14 @@ def install():
 			print(packagename, packageversion, packagearch, "\n")
 			"""
 		except Exception as e:
-			print("Failed to locate package: {0}".format(":".join(package.values())))
+			print("Failed to locate package {0}:{1}:{2}".format(package["name"], package["version"], package["arch"]))
+
+def link():
+	pass
+
+def unlink():
+	pass
+
 
 def remove():
 	pass
@@ -79,7 +89,8 @@ def search():
 """ Actions->function() table """
 actions = {
 	"install": install,
-	"download": download,
+	"link": link,
+	"unlink": unlink,
 	"remove": remove,
 	"purge": purge,
 	"search": search
@@ -109,10 +120,11 @@ if __name__ == '__main__':
 	daemon.handshake();
 
 	try:
-		location = daemon.get_list()
-		database = BTEdb.Database(location)
-	except:
-		print("Error reading package list " + location)
+		location = "/home/ethan/Projects/tpm-client/client/package-index.json" #daemon.get_list()
+		database = BTEdb.Database()
+		database.OpenDatabase(location)
+	except Exception as e:
+		print("Error reading package list " + location + str(e))
 		sys.exit(1)
 
 	actions.get(args.action, command_not_found)()

@@ -216,7 +216,6 @@ class Protocol_1_0(SocketUtils):
 
 			self.fetch_repo_file("/torrent", self.config["daemon"]["rootdir"] + "/torrent", "wb")
 			self.torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/torrent")
-			
 
 			""" Find pre-downloaded files """
 			pre_downloaded = {}
