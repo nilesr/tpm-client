@@ -59,7 +59,7 @@ class Protocol_1_0(SocketUtils):
 		""" Return location of list or other 'things' """
 		if len(args) >= 2:
 			if args[1] == "list":
-				self.write_line("LIST {0} ".format(self.config["daemon"]["rootdir"] + "/package-index.json"))
+				self.write_line("LIST {0}".format(self.config["daemon"]["rootdir"] + "/package-index.json"))
 
 	def download(self, args):
 		""" Download a copy of a package, (and seed it?) """
