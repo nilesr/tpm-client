@@ -47,7 +47,7 @@ class Protocol_1_0(SocketUtils):
 		Download and update package list
 		TODO: Check to ensure this logic is correct
 		"""
-		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json", os.O_NONBLOCK)
+		self.master = BTEdb.Database(self.config["daemon"]["rootdir"] + "/package-index.json")
 		self.update_list()
 		
 	def update(self, args):
@@ -210,11 +210,11 @@ class Protocol_1_0(SocketUtils):
 		TODO: Clean up.
 		"""
 		try:
-			self.master.master = json.loads(self.fetch_repo_file("/package-index.json").decode('utf-8'))
 			assert(not self.master.TransactionInProgress)
 			self.master.Vacuum()
 
 			self.fetch_repo_file("/torrent", self.config["daemon"]["rootdir"] + "/torrent", "wb")
+			self.master.master = json.loads(self.fetch_repo_file("/package-index.json", True).decode('utf-8'))
 			self.torrent_info = lt.torrent_info(self.config["daemon"]["rootdir"] + "/torrent")
 
 			""" Find pre-downloaded files """
@@ -269,7 +269,7 @@ class Protocol_1_0(SocketUtils):
 			data = urllib.request.urlopen(self.config["repo"]["repo_proto"] + "://" + self.config["repo"]["repo_addr"] + ":" + self.config["repo"]["repo_port"] + path).read()
 
 			if save != False:
-				f = open(save, mode)
+				f = open(path, mode)
 				f.write(data)
 				f.close()
 			return data

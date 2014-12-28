@@ -42,7 +42,7 @@ class DaemonCommunication(SocketUtils):
 		location = self.read_line()
 
 		if location[:5] == "LIST ":
-			return location[5:].strip()
+			return location[5:]
 		else:
 			raise Exception("Error")
 

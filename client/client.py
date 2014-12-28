@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit, platform, json
+import os, sys, BTEdb, argparse, time, configparser, curses, traceback, socket, atexit, platform, json, traceback
 from daemon_communication import DaemonCommunication
 from screen_shim import ScreenShim
 
@@ -50,25 +50,21 @@ def install():
 				"arch": parameters[2] if parameters[2] != None else platform.processor()
 			}
 			
-			if TableExists(package["name"]):
-				for version in database.Dump(package["name"]):
-					print(version)
-			else:
+			if not database.TableExists(package["name"]):
 				raise Exception("Package doesn't exist in database.")	
 
-			"""
-			for version in database.Dump(packagename):
-				if version["Version"] == packageversion:
+			for version in database.Dump(package["name"]):
+				if version["Version"] == package["version"]:
 					if version["Version"] != "Latest":
 						screen.write_line(version["Dependencies"] + "\n")
 					else:
-						for version_ in database.Dump(packagename):
-							if verison_["Version"] == version["LatestVersion"]:
-								write_line(version["Dependencies"] + "\n")
-			print(packagename, packageversion, packagearch, "\n")
-			"""
+						for version_ in database.Dump(package["name"]):
+							if version_["Version"] == version["LatestVersion"]:
+								screen.write_line(str(version_["Dependencies"]) + "\n")
+			print(package["name"], package["version"], package["arch"], "\n")
 		except Exception as e:
 			print("Failed to locate package {0}:{1}:{2}".format(package["name"], package["version"], package["arch"]))
+			print(traceback.format_exc())
 
 def link():
 	pass
@@ -123,7 +119,6 @@ if __name__ == '__main__':
 		location = daemon.get_list()
 		database = BTEdb.Database()
 		database.OpenDatabase(location)
-		print(database.Dump())
 	except Exception as e:
 		print("Error reading package list " + location + str(e))
 		sys.exit(1)
