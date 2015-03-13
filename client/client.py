@@ -37,9 +37,8 @@ def command_not_found():
 
 def download():
 	pass
-
-def install():
-	for package in args.arguments: # For each package in the list of arguments
+def get_depends(args):
+	for package in args: # For each package in the list of arguments
 		try:
 			tmp = tuple(package.split(":")) # Ethan wrote this
 			parameters =  tmp + (None,) * (3 - len(tmp)) # This converts the "name:version:arch" into a tuple
@@ -59,13 +58,15 @@ def install():
 						screen.write_line(version["Dependencies"] + "\n") # FIXME CHANGEME TODO print the dependencies
 					else: #										On the other hand, if this IS "Latest"
 						for version_ in database.Dump(package["name"]): # For each version in the package
-							if version_["Version"] == version["LatestVersion"]:
-								screen.write_line(str(version_["Dependencies"]) + "\n")
-			print(package["name"], package["version"], package["arch"], "\n")
-		except Exception as e:
-			print("Failed to locate package {0}:{1}:{2}".format(package["name"], package["version"], package["arch"]))
+							if version_["Version"] == version["LatestVersion"]: # If this is the latest version
+								screen.write_line(str(version_["Dependencies"]) + "\n") # FIXME CHANGEME TODO print the dependencies
+			print(package["name"], package["version"], package["arch"], "\n") # FIXME CHANGEME TODO print the package name, version and arch
+		except:
+			print("Failed to locate package " + package["name"] + ":" + package["version"] + ":" + package["arch"])
 			print(traceback.format_exc())
 
+def install():
+	print(get_depends(args.arguments))
 def link():
 	pass
 
