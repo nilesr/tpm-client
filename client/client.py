@@ -39,26 +39,26 @@ def download():
 	pass
 
 def install():
-	for package in args.arguments:
+	for package in args.arguments: # For each package in the list of arguments
 		try:
-			tmp = tuple(package.split(":"))
-			parameters =  tmp + (None,) * (3 - len(tmp))
+			tmp = tuple(package.split(":")) # Ethan wrote this
+			parameters =  tmp + (None,) * (3 - len(tmp)) # This converts the "name:version:arch" into a tuple
 
-			package = {
+			package = { # This converts the tuple into a dictionary so we can use default values
 				"name": parameters[0],
-				"version": parameters[1] if parameters[1] != None else "Latest",
-				"arch": parameters[2] if parameters[2] != None else platform.processor()
+				"version": parameters[1] if parameters[1] != None else "Latest", # If there is no second value, set the value of "version" to "Latest"
+				"arch": parameters[2] if parameters[2] != None else platform.processor() # If there is no third value, set "arch" to the current processor
 			}
 			
-			if not database.TableExists(package["name"]):
+			if not database.TableExists(package["name"]): # 	If the package doesn't exist, throw an error
 				raise Exception("Package doesn't exist in database.")	
-
-			for version in database.Dump(package["name"]):
-				if version["Version"] == package["version"]:
-					if version["Version"] != "Latest":
-						screen.write_line(version["Dependencies"] + "\n")
-					else:
-						for version_ in database.Dump(package["name"]):
+			
+			for version in database.Dump(package["name"]): # 	For each version of that package
+				if version["Version"] == package["version"]: # 	If this is the version we're attempting to install
+					if version["Version"] != "Latest": #		and it's not "Latest"
+						screen.write_line(version["Dependencies"] + "\n") # FIXME CHANGEME TODO print the dependencies
+					else: #										On the other hand, if this IS "Latest"
+						for version_ in database.Dump(package["name"]): # For each version in the package
 							if version_["Version"] == version["LatestVersion"]:
 								screen.write_line(str(version_["Dependencies"]) + "\n")
 			print(package["name"], package["version"], package["arch"], "\n")
